@@ -177,16 +177,47 @@
     <div class="toast" id="toastNotif">Berhasil Disalin! ✨</div>
 
     <!-- Bagian Menu Notes / Catatan -->
-<div class="card" style="margin-top: 20px;">
-    <h3><i class="fa-solid fa-pen-to-square"></i> Notes / Catatan</h3>
-<textarea 
-    id="userNotes" 
-    placeholder="Ketik atau tempel catatan penting Anda di sini... (Otomatis tersimpan)" 
-    style="width: 100%; min-height: 250px; padding: 15px; background: #1a1a2e; color: #fff; border: 1px solid #00f2fe; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box; line-height: 1.5;"
-    oninput="saveNotes()"
-></textarea>
-    <button class="btn-primary" onclick="clearNotes()" style="margin-top: 10px; background: #ff4757; border-color: #ff4757;">
-        <i class="fa-solid fa-trash"></i> Hapus Catatan
+    <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 20px;">
+    <div class="title" style="text-align: center;">
+        <i class="fa-solid fa-pen-to-square" style="color: #00ffcc;"></i> Notes / Catatan 3 Kolom
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        
+        <div>
+            <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">CATATAN UTAMA</div>
+            <textarea 
+                id="userNotes" 
+                placeholder="Tulis catatan utama di sini..." 
+                style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
+                oninput="saveNotes('userNotes', 'aplikasi_notes')"
+            ></textarea>
+        </div>
+
+        <div>
+            <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">DATA PENTING / COPAS</div>
+            <textarea 
+                id="userNotes2" 
+                placeholder="Tempel data hasil acak ke sini..." 
+                style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
+                oninput="saveNotes('userNotes2', 'aplikasi_notes_2')"
+            ></textarea>
+        </div>
+
+        <div>
+            <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">LAIN-LAIN / TODO</div>
+            <textarea 
+                id="userNotes3" 
+                placeholder="Tulis tambahan info lainnya di sini..." 
+                style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
+                oninput="saveNotes('userNotes3', 'aplikasi_notes_3')"
+            ></textarea>
+        </div>
+
+    </div>
+
+    <button class="btn-primary" onclick="clearAllNotes()" style="background: linear-gradient(45deg, #ff4a4a, #cc2e2e); box-shadow: 0 4px 15px rgba(255, 74, 74, 0.3); max-width: 200px; margin: 0 auto;">
+        <i class="fa-solid fa-trash"></i> Hapus Semua Catatan
     </button>
 </div>
 
@@ -296,28 +327,39 @@ function showToast(pesan) {
 // Fungsi untuk memuat catatan yang tersimpan saat halaman pertama kali dibuka
 document.addEventListener("DOMContentLoaded", function() {
     // ... kode fetch data JSON Anda yang sudah ada ...
-    
-    // Tambahkan baris ini untuk memuat catatan lama jika ada
-    const savedNotes = localStorage.getItem("aplikasi_notes");
-    if (savedNotes) {
-        document.getElementById("userNotes").value = savedNotes;
-    }
+
+    // Memuat catatan lama dari 3 kolom berbeda saat halaman dibuka
+    const savedNotes1 = localStorage.getItem("aplikasi_notes");
+    if (savedNotes1) document.getElementById("userNotes").value = savedNotes1;
+
+    const savedNotes2 = localStorage.getItem("aplikasi_notes_2");
+    if (savedNotes2) document.getElementById("userNotes2").value = savedNotes2;
+
+    const savedNotes3 = localStorage.getItem("aplikasi_notes_3");
+    if (savedNotes3) document.getElementById("userNotes3").value = savedNotes3;
 });
 
-// Fungsi untuk menyimpan catatan secara otomatis setiap kali pengguna mengetik
-window.saveNotes = function() {
-    const notesValue = document.getElementById("userNotes").value;
-    localStorage.setItem("aplikasi_notes", notesValue);
+// Fungsi dinamis untuk menyimpan catatan otomatis berdasarkan ID kolomnya
+window.saveNotes = function(elementId, storageKey) {
+    const notesValue = document.getElementById(elementId).value;
+    localStorage.setItem(storageKey, notesValue);
 };
 
-// Fungsi untuk menghapus seluruh isi catatan
-window.clearNotes = function() {
-    if (confirm("Apakah Anda yakin ingin menghapus seluruh catatan?")) {
+// Fungsi untuk menghapus sekaligus seluruh 3 kolom catatan
+window.clearAllNotes = function() {
+    if (confirm("Apakah Anda yakin ingin menghapus seluruh isi di ketiga kolom catatan?")) {
         document.getElementById("userNotes").value = "";
+        document.getElementById("userNotes2").value = "";
+        document.getElementById("userNotes3").value = "";
+        
         localStorage.removeItem("aplikasi_notes");
-        showToast("Catatan berhasil dihapus!");
+        localStorage.removeItem("aplikasi_notes_2");
+        localStorage.removeItem("aplikasi_notes_3");
+        
+        showToast("Semua catatan berhasil dikosongkan!");
     }
 };
+
         
     </script>
 </body>
