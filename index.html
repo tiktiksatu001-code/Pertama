@@ -6,7 +6,7 @@
     <title>Generator Data Acak</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
             background-color: #f4f7f6;
             display: flex;
             justify-content: center;
@@ -23,7 +23,6 @@
             max-width: 400px;
             width: 100%;
         }
-        h2 { color: #333; margin-bottom: 20px; }
         .data-box {
             background-color: #f9f9f9;
             border: 1px solid #ddd;
@@ -32,8 +31,7 @@
             margin-bottom: 20px;
             text-align: left;
         }
-        .data-item { margin: 10px 0; font-size: 16px; color: #555; }
-        .data-item strong { color: #2c3e50; }
+        .data-item { margin: 10px 0; font-size: 16px; }
         button {
             background-color: #2ecc71;
             color: white;
@@ -43,52 +41,39 @@
             border-radius: 5px;
             cursor: pointer;
             width: 100%;
-            transition: background 0.2s;
         }
-        button:hover { background-color: #27ae60; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>Generator Data Acak</h2>
-    
     <div class="data-box">
         <div class="data-item"><strong>Nama:</strong> <span id="nama">-</span></div>
         <div class="data-item"><strong>Alamat:</strong> <span id="alamat">-</span></div>
         <div class="data-item"><strong>No. HP:</strong> <span id="nohp">-</span></div>
     </div>
-
     <button onclick="buatDataAcak()">Acak Data Baru</button>
 </div>
 
 <script>
-    // Bank data mentah untuk diacak
     const daftarNama = ["Budi Santoso", "Siti Aminah", "Rian Hidayat", "Dewi Lestari", "Andi Wijaya", "Mega Utami", "Fajar Nugraha", "Putri Rahmawati"];
     const daftarJalan = ["Jl. Merdeka No. ", "Jl. Sudirman No. ", "Jl. Diponegoro No. ", "Jl. Gajah Mada No. ", "Jl. Pemuda No. "];
     const daftarKota = ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Yogyakarta"];
 
     function buatDataAcak() {
-        // 1. Acak Nama
         const namaAcak = daftarNama[Math.floor(Math.random() * daftarNama.length)];
-        
-        // 2. Acak Alamat (Gabungan Jalan + Nomor Acak + Kota Acak)
         const jalanAcak = daftarJalan[Math.floor(Math.random() * daftarJalan.length)];
         const nomorAcak = Math.floor(Math.random() * 150) + 1;
         const kotaAcak = daftarKota[Math.floor(Math.random() * daftarKota.length)];
-        const alamatLengkap = `${jalanAcak}${nomorAcak}, ${kotaAcak}`;
-
-        // 3. Acak No Handphone (Awalan Indonesia + angka acak)
+        
         const awalanHP = ["0812", "0813", "0857", "0878", "0896"];
         const nomorHpAcak = awalanHP[Math.floor(Math.random() * awalanHP.length)] + "-" + Math.floor(10000000 + Math.random() * 90000000);
 
-        // Tampilkan ke layar aplikasi
         document.getElementById("nama").innerText = namaAcak;
-        document.getElementById("alamat").innerText = alamatLengkap;
+        document.getElementById("alamat").innerText = jalanAcak + nomorAcak + ", " + kotaAcak;
         document.getElementById("nohp").innerText = nomorHpAcak;
     }
-
-    // Jalankan sekali saat pertama kali aplikasi dibuka
     buatDataAcak();
 </script>
 
