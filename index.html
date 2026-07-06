@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik</title>
+    <title>Generator Data Futuristik v2</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -92,7 +92,6 @@
             box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4);
         }
         
-        /* Panel Riwayat Data */
         .history-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -127,7 +126,6 @@
             color: #00ffcc;
         }
 
-        /* Notifikasi Toast */
         .toast {
             position: fixed;
             bottom: 30px;
@@ -153,7 +151,7 @@
 <body>
 
     <div class="container-card">
-        <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generat</div>
+        <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator Futuristik</div>
         
         <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
         
@@ -179,47 +177,40 @@
     <div class="toast" id="toastNotif">Berhasil Disalin! ✨</div>
 
     <script>
-        const DEPAN = [
-            "Budi", "Siti", "Rian", "Dewi", "Agus", "Putri", "Eko", "Mega", "Rizky", "Ayu", 
-            "Andi", "Sari", "Hendra", "Nanda", "Fajar", "Lestari", "Denny", "Fitri", "Taufik", "Wulan",
-            "Aditya", "Bambang", "Catur", "Dedi", "Endah", "Gatot", "Heri", "Indah", "Joko", "Kartika",
-            "Lukman", "Mulyono", "Novi", "Oki", "Prabowo", "Retno", "Slamet", "Tri", "Utami", "Wahyu",
-            "Yanto", "Zainal", "Ahmad", "Sri", "Aris", "Dwi", "Eka", "Gilang", "Hadi", "Iwan"
-        ];
+        // Array Data Utama yang di-load dari file JSON eksternal
+        let DATA_DUMMY_DATABASE = [];
 
-        const BELAKANG = [
-            "Santoso", "Aminah", "Hidayat", "Lestari", "Wijaya", "Kusuma", "Permana", "Saputra", "Utami", "Pratama", 
-            "Setiawan", "Nugroho", "Wibowo", "Suryo", "Prakoso", "Hutomo", "Sucipto", "Budiman", "Gunawan", "Susanto",
-            "Anggoro", "Basuki", "Darsono", "Effendi", "Firmansyah", "Hardianto", "Irawan", "Kurniawan", "Mahendra", "Nasution"
-        ];
-
-        const JALAN = [
-            "Jl. Merdeka", "Jl. Mawar", "Jl. Sudirman", "Jl. Gatot Subroto", "Jl. Diponegoro", "Jl. Melati", "Jl. Hayam Wuruk", "Jl. Gajah Mada", "Jl. Pahlawan", "Jl. Pemuda",
-            "Jl. Asia Afrika", "Jl. Dago", "Jl. Malioboro", "Jl. Slamet Riyadi", "Jl. Basuki Rahmat", "Jl. Ahmad Yani", "Jl. Veteran"
-        ];
-
-        const KOTA = [
-            "Jakarta Pusat", "Jakarta Selatan", "Jakarta Barat", "Jakarta Timur", "Jakarta Utara", "Tangerang", "Tangerang Selatan",
-            "Bandung", "Bekasi", "Depok", "Bogor", "Cirebon", "Semarang", "Surakarta (Solo)", "Yogyakarta", "Surabaya", "Malang", "Sidoarjo"
-        ];
-
-        const PROVIDER = ["0812", "0813", "0821", "0857", "0896", "0878", "0838", "0882"];
+        // Fungsi bawaan untuk mengambil data dari file data_pengguna.json
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('./data_pengguna.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Gagal mengambil file JSON.");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    DATA_DUMMY_DATABASE = data;
+                    console.log("Database dummy berhasil dimuat! Total: " + data.length + " baris data.");
+                })
+                .catch(err => {
+                    console.error("Error load data:", err);
+                    showToast("Gagal memuat database JSON! ⚠️");
+                });
+        });
 
         window.generateName = function() {
-            const namaDepan = DEPAN[Math.floor(Math.random() * DEPAN.length)];
-            const namaBelakang = BELAKANG[Math.floor(Math.random() * BELAKANG.length)];
-            const namaLengkap = `${namaDepan} ${namaBelakang}`;
+            // Validasi jika data belum selesai di-load oleh browser
+            if (DATA_DUMMY_DATABASE.length === 0) {
+                showToast("Data sedang memuat, silakan tunggu... ⚠️");
+                return;
+            }
 
-            const namaJalan = JALAN[Math.floor(Math.random() * JALAN.length)];
-            const nomorRumah = Math.floor(Math.random() * 200) + 1; 
-            const namaKota = KOTA[Math.floor(Math.random() * KOTA.length)];
-            const alamatLengkap = `${namaJalan} No. ${nomorRumah}, ${namaKota}`;
-
-            const awalan = PROVIDER[Math.floor(Math.random() * PROVIDER.length)];
-            const acakAngka = Math.floor(10000000 + Math.random() * 90000000); 
-            const nomorHP = `${awalan}${acakAngka}`;
-
-            const dataFinal = `${namaLengkap} | ${alamatLengkap} | ${nomorHP}`;
+            // Memilih satu objek baris data secara acak dari database JSON
+            const dataAcak = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
+            
+            // Menggabungkan string data sesuai dengan template Anda sebelumnya
+            const dataFinal = `${dataAcak.nama} | ${dataAcak.alamat} | 0${dataAcak.no_hp}`;
             
             tampilkanDanSalin(dataFinal);
             tambahKeRiwayat(dataFinal);
