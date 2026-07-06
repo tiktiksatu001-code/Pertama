@@ -3,79 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Acak</title>
+    <title>Generator Data Futuristik</title>
+    
+    <!-- Import icon dari Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
     <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f4f7f6;
+        * {
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f0c1b; 
+            background: linear-gradient(to bottom, #15102a, #0f0c1b);
+            margin: 0; 
+            padding: 20px; 
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
+            color: #fff;
         }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 400px;
+        .container-card { 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px; 
+            padding: 30px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
             width: 100%;
-        }
-        .data-box {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 15px;
-            border-radius: 6px;
+            max-width: 420px;
+            text-align: center;
             margin-bottom: 20px;
+        }
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #d6c7ff;
+            letter-spacing: 0.5px;
+        }
+        .form-input { 
+            width: 100%; 
+            padding: 16px; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            font-weight: 600; 
+            font-size: 15px; 
+            border: 2px solid #3d3463; 
+            border-radius: 12px; 
+            outline: none;
+            background-color: #1a1535;
+            color: #00ffcc;
+            text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
+        }
+        .form-input:focus {
+            border-color: #8a2be2;
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .btn-primary { 
+            width: 100%;
+            padding: 15px; 
+            background: linear-gradient(45deg, #8a2be2, #4a00e0); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 5px rgba(138, 43, 226, 0.2);
+        }
+        #btn-username {
+            background: linear-gradient(45deg, #00b4db, #0083b0);
+            box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4);
+        }
+        
+        /* Panel Riwayat Data */
+        .history-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            width: 100%;
+            max-width: 420px;
+            max-height: 200px;
+            overflow-y: auto;
             text-align: left;
         }
-        .data-item { margin: 10px 0; font-size: 16px; }
-        button {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 5px;
+        .history-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #aaa;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .history-item {
+            font-size: 12px;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #ccc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             cursor: pointer;
-            width: 100%;
+        }
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #00ffcc;
+        }
+
+        /* Notifikasi Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #00ffcc;
+            color: #0f0c1b;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 99;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Generator Data Acak</h2>
-    <div class="data-box">
-        <div class="data-item"><strong>Nama:</strong> <span id="nama">-</span></div>
-        <div class="data-item"><strong>Alamat:</strong> <span id="alamat">-</span></div>
-        <div class="data-item"><strong>No. HP:</strong> <span id="nohp">-</span></div>
-    </div>
-    <button onclick="buatDataAcak()">Acak Data Baru</button>
-</div>
-
-<script>
-    const daftarNama = ["Budi Santoso", "Siti Aminah", "Rian Hidayat", "Dewi Lestari", "Andi Wijaya", "Mega Utami", "Fajar Nugraha", "Putri Rahmawati"];
-    const daftarJalan = ["Jl. Merdeka No. ", "Jl. Sudirman No. ", "Jl. Diponegoro No. ", "Jl. Gajah Mada No. ", "Jl. Pemuda No. "];
-    const daftarKota = ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Yogyakarta"];
-
-    function buatDataAcak() {
-        const namaAcak = daftarNama[Math.floor(Math.random() * daftarNama.length)];
-        const jalanAcak = daftarJalan[Math.floor(Math.random() * daftarJalan.length)];
-        const nomorAcak = Math.floor(Math.random() * 150) + 1;
-        const kotaAcak = daftarKota[Math.floor(Math.random() * daftarKota.length)];
+    <div class="container-card">
+        <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator Pro</div>
         
-        const awalanHP = ["0812", "0813", "0857", "0878", "0896"];
-        const nomorHpAcak = awalanHP[Math.floor(Math.random() * awalanHP.length)] + "-" + Math.floor(10000000 + Math.random() * 90000000);
+        <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
+        
+        <div class="btn-group">
+            <button class="btn-primary" id="btn-gen" onclick="generateName()">
+                <i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data
+            </button>
+            
+            <button class="btn-primary" id="btn-username" onclick="generateUsername()">
+                <i class="fa-solid fa-user"></i> Nama Tanpa Spasi
+            </button>
+        </div>
+    </div>
 
-        document.getElementById("nama").innerText = namaAcak;
-        document.getElementById("alamat").innerText = jalanAcak + nomorAcak + ", " + kotaAcak;
-        document.getElementById("nohp").innerText = nomorHpAcak;
-    }
-    buatDataAcak();
-</script>
+    <!-- Kotak Riwayat Hasil Acak -->
+    <div class="history-card">
+        <div class="history-title">
+            <span><i class="fa-solid fa-history"></i> RIWAYAT GENERATE (KLIK UNTUK SALIN)</span>
+            <span style="cursor:pointer; color:#ff4a4a;" onclick="clearHistory()">Hapus</span>
+        </div>
+        <div id="historyList"></div>
+    </div>
 
+    <div class="toast" id="toastNotif">Berhasil Disalin! ✨</div>
+
+    <script>
+        const DEPAN = [
+            "Budi", "Siti", "Rian", "Dewi", "Agus", "Putri", "Eko", "Mega", "Rizky", "Ayu", 
+            "Andi", "Sari", "Hendra", "Nanda", "Fajar", "Lestari", "Denny", "Fitri", "Taufik", "Wulan",
+            "Aditya", "Bambang", "Catur", "Dedi", "Endah", "Gatot", "Heri", "Indah", "Joko", "Kartika",
+            "Lukman", "Mulyono", "Novi", "Oki", "Prabowo", "Retno", "Slamet", "Tri", "Utami", "Wahyu",
+            "Yanto", "Zainal", "Ahmad", "Sri", "Aris", "Dwi", "Eka", "Gilang", "Hadi", "Iwan"
+        ];
+
+        const BELAKANG = [
+            "Santoso", "Aminah", "Hidayat", "Lestari", "Wijaya", "Kusuma", "Permana", "Saputra", "Utami", "Pratama", 
+            "Setiawan", "Nugroho", "Wibowo", "Suryo", "Prakoso", "Hutomo", "Sucipto", "Budiman", "Gunawan", "Susanto",
+            "Anggoro", "Basuki", "Darsono", "Effendi", "Firmansyah", "Hardianto", "Irawan", "Kurniawan", "Mahendra", "Nasution"
+        ];
+
+        const JALAN = [
+            "Jl. Merdeka", "Jl. Mawar", "Jl. Sudirman", "Jl. Gatot Subroto", "Jl. Diponegoro", "Jl. Melati", "Jl. Hayam Wuruk", "Jl. Gajah Mada", "Jl. Pahlawan", "Jl. Pemuda",
+            "Jl. Asia Afrika", "Jl. Dago", "Jl. Malioboro", "Jl. Slamet Riyadi", "Jl. Basuki Rahmat", "Jl. Ahmad Yani", "Jl. Veteran"
+        ];
+
+        const KOTA = [
+            "Jakarta Pusat", "Jakarta Selatan", "Jakarta Barat", "Jakarta Timur", "Jakarta Utara", "Tangerang", "Tangerang Selatan",
+            "Bandung", "Bekasi", "Depok", "Bogor", "Cirebon", "Semarang", "Surakarta (Solo)", "Yogyakarta", "Surabaya", "Malang", "Sidoarjo"
+        ];
+
+        const PROVIDER = ["0812", "0813", "0821", "0857", "0896", "0878", "0838", "0882"];
+
+        window.generateName = function() {
+            const namaDepan = DEPAN[Math.floor(Math.random() * DEPAN.length)];
+            const namaBelakang = BELAKANG[Math.floor(Math.random() * BELAKANG.length)];
+            const namaLengkap = `${namaDepan} ${namaBelakang}`;
+
+            const namaJalan = JALAN[Math.floor(Math.random() * JALAN.length)];
+            const nomorRumah = Math.floor(Math.random() * 200) + 1; 
+            const namaKota = KOTA[Math.floor(Math.random() * KOTA.length)];
+            const alamatLengkap = `${namaJalan} No. ${nomorRumah}, ${namaKota}`;
+
+            const awalan = PROVIDER[Math.floor(Math.random() * PROVIDER.length)];
+            const acakAngka = Math.floor(10000000 + Math.random() * 90000000); 
+            const nomorHP = `${awalan}${acakAngka}`;
+
+            const dataFinal = `${namaLengkap} | ${alamatLengkap} | ${nomorHP}`;
+            
+            tampilkanDanSalin(dataFinal);
+            tambahKeRiwayat(dataFinal);
+        };
+
+        window.generateUsername = function() {
+            const teksInput = document.getElementById('genNameOutput').value;
+            
+            if (!teksInput || teksInput === "Data akan muncul di sini") {
+                showToast("Silakan acak data terlebih dahulu! ⚠️");
+                return;
+            }
+            
+            const namaLengkap = teksInput.split('|')[0].trim();
+            const namaTanpasPasi = namaLengkap.replace(/\s+/g, '').toLowerCase();
+            
+            tampilkanDanSalin(namaTanpasPasi);
+            tambahKeRiwayat(namaTanpasPasi);
+        };
+
+        function tampilkanDanSalin(teks) {
+            const outputField = document.getElementById('genNameOutput');
+            if (outputField) {
+                outputField.value = teks;
+                
+                // Fitur salin otomatis ramah browser mobile/GitHub Pages
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(teks).then(() => {
+                        showToast("Berhasil Disalin! OK!! ✨");
+                    }).catch(err => {
+                        salinManual(outputField);
+                    });
+                } else {
+                    salinManual(outputField);
+                }
+            }
+        }
+
+        function salinManual(inputElement) {
+            inputElement.select();
+            inputElement.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            showToast("Berhasil Disalin! OK!! ✨");
+        }
+
+        function tambahKeRiwayat(teks) {
+            const historyList = document.getElementById('historyList');
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerText = teks;
+            item.onclick = function() { tampilkanDanSalin(teks); };
+            historyList.insertBefore(item, historyList.firstChild);
+        }
+
+        function clearHistory() {
+            document.getElementById('historyList').innerHTML = '';
+            showToast("Riwayat dihapus!");
+        }
+
+        function showToast(pesan) {
+            const toast = document.getElementById('toastNotif');
+            toast.innerText = pesan;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2000);
+        }
+    </script>
 </body>
 </html>
