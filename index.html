@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data BGS v3.2</title>
+    <title>Generator Data Futuristik v3.3</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -47,13 +47,12 @@
         .note-num-btn { background: #3d3463; color: #00ffcc; border: 1px solid #5a4f8c; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; min-width: 35px; text-align: center; }
         .note-num-btn:hover { background: #00ffcc; color: #141026; box-shadow: 0 0 8px #00ffcc; }
         
-        /* INPUT AREA EDITABLE & VIEW */
         .note-text-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 13px; padding: 4px 0; display: block; width: 100%; }
         
-        /* PEMANIS VISUAL: WARNA SPEAL UNTUK PREVIEW TEXT YANG TERPISAH '/' */
+        /* ADJUSTMENT SEMENTARA WARNA STRUKTUR COPAST TEKS UNTUK PEMBATAS '|' */
         .note-display-wrapper { flex: 1; font-size: 13px; padding: 4px 0; word-break: break-all; }
-        .text-before-slash { color: #ffffff; font-weight: 500; }
-        .text-after-slash { color: #6e678a; font-style: italic; }
+        .text-before-pipe { color: #ffffff; font-weight: 500; }
+        .text-after-pipe { color: #6e678a; font-style: italic; }
     </style>
 </head>
 <body>
@@ -131,7 +130,7 @@
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
         let currentFileSha = ""; 
-        let rawNotesLines = []; // Array penampung baris teks mentah asli
+        let rawNotesLines = [];
 
         const DEFAULT_USER = "bgszp";
         const DEFAULT_REPO = "bgszp.github.io";
@@ -175,20 +174,19 @@
                 const rowDiv = document.createElement("div");
                 rowDiv.className = "note-row";
 
-                // 1. TOMBOL COPY DENGAN FILTRASI TANDA '/'
+                // 1. TOMBOL COPY DENGAN FILTRASI BARU MENGGUNAKAN TANDA '|'
                 const numBtn = document.createElement("button");
                 numBtn.className = "note-num-btn";
                 numBtn.innerText = `[${rowNum}]`;
                 numBtn.onclick = function() {
-                    // Ambil value teks live langsung dari input field terkait
                     const currentInpValue = document.getElementById(`inp-note-${index}`) ? document.getElementById(`inp-note-${index}`).value : text;
                     
                     if(currentInpValue.trim() !== "") {
                         let finalCopyText = currentInpValue;
                         
-                        // FITUR UTAMA: Jika ada tanda /, potong string dan ambil bagian kirinya saja
-                        if(currentInpValue.includes("/")) {
-                            finalCopyText = currentInpValue.split("/")[0].trim();
+                        // SEKARANG MENGGUNAKAN PEMBATAS '|'
+                        if(currentInpValue.includes("|")) {
+                            finalCopyText = currentInpValue.split("|")[0].trim();
                         }
 
                         if (navigator.clipboard && window.isSecureContext && finalCopyText !== "") {
@@ -201,9 +199,8 @@
 
                 rowDiv.appendChild(numBtn);
 
-                // 2. LOGIKA STRUKTUR TAMPILAN (MODE ADMIN VS MODE PANTAU)
+                // 2. LOGIKA STRUKTUR TAMPILAN
                 if(isAdminAuthenticated) {
-                    // Jika mode admin, tampilkan Input Box Biasa agar bebas diketik
                     const inputField = document.createElement("input");
                     inputField.type = "text";
                     inputField.id = `inp-note-${index}`;
@@ -218,18 +215,18 @@
                     };
                     rowDiv.appendChild(inputField);
                 } else {
-                    // Jika mode pantau biasa, gunakan visual styling pembagi tanda '/'
                     const displayWrapper = document.createElement("div");
                     displayWrapper.className = "note-display-wrapper";
                     
-                    if(text.includes("/")) {
-                        const parts = text.split("/");
-                        const beforeSlash = parts[0];
-                        const afterSlash = parts.slice(1).join("/"); // Gabung sisa jika ada slash ganda
+                    // SEKARANG MEMILAH BERDASARKAN TANDA '|'
+                    if(text.includes("|")) {
+                        const parts = text.split("|");
+                        const beforePipe = parts[0];
+                        const afterPipe = parts.slice(1).join("|");
                         
-                        displayWrapper.innerHTML = `<span class="text-before-slash">${beforeSlash}</span><span class="text-after-slash">/${afterSlash}</span>`;
+                        displayWrapper.innerHTML = `<span class="text-before-pipe">${beforePipe}</span><span class="text-after-pipe">|${afterPipe}</span>`;
                     } else {
-                        displayWrapper.innerHTML = `<span class="text-before-slash">${text}</span>`;
+                        displayWrapper.innerHTML = `<span class="text-before-pipe">${text}</span>`;
                     }
                     rowDiv.appendChild(displayWrapper);
                 }
@@ -309,7 +306,6 @@
                 if (inputPin === ADMIN_PIN) {
                     isAdminAuthenticated = true;
                     
-                    // Remake list ke versi Box Input agar bisa diketik
                     const savedStateText = rawNotesLines.join("\n");
                     renderNotesList(savedStateText);
 
@@ -337,7 +333,7 @@
                 const base64Content = btoa(unescape(encodeURIComponent(combinedText)));
 
                 const bodyPayload = {
-                    message: "Update live text divider via web panel",
+                    message: "Update live text vertical pipe divider via panel",
                     content: base64Content
                 };
                 
