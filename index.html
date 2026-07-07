@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v2.6</title>
+    <title>Generator Data Futuristik v2.7</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -34,15 +34,9 @@
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .sms-info-tag { background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; font-size: 13px; display: flex; justify-content: space-around; margin-bottom: 15px; }
-        .sms-info-tag span { color: #00ffcc; }
         .config-input-group { text-align: left; margin-bottom: 15px; }
         .config-input-group label { display: block; font-size: 11px; font-weight: bold; color: #aaa; margin-bottom: 5px; }
-        .config-field { width: 100%; padding: 12px; background: #110d24; border: 1px solid #3d3463; border-radius: 8px; color: #ff007f; font-family: monospace; font-size: 13px; text-align: center; outline: none; }
-        .select-field { width: 100%; padding: 12px; background: #110d24; border: 1px solid #3d3463; border-radius: 8px; color: #00ffcc; font-weight: bold; text-align-last: center; }
-        #btn-sms-code { background: linear-gradient(45deg, #ff007f, #7928ca); box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4); }
-        .sms-result-box { margin-top: 15px; padding: 12px 15px; background: rgba(0, 255, 204, 0.05); border-left: 4px solid #00ffcc; border-radius: 6px; text-align: left; display: none; }
-        .sms-error-mode { background: rgba(255, 74, 74, 0.1) !important; border-left-color: #ff4a4a !important; }
+        .config-field { width: 100%; padding: 12px; background: #110d24; border: 1px solid #3d3463; border-radius: 8px; color: #00ffcc; font-family: monospace; font-size: 13px; text-align: center; outline: none; }
         .admin-locked { background: #141026 !important; border-color: #2b2447 !important; color: #666 !important; cursor: not-allowed; }
         .btn-admin-control { margin-top: 8px; padding: 6px 12px; font-size: 11px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
     </style>
@@ -58,33 +52,6 @@
         </div>
     </div>
 
-    <div class="container-card">
-        <div class="title"><i class="fa-solid fa-comment-sms" style="color: #ff007f;"></i> SMS Code Cloud</div>
-        <div class="config-input-group">
-            <label>CONFIG SMSCODE API KEY</label>
-            <input type="password" id="smsApiKeyField" class="config-field" placeholder="Tempel token SMSCode..." oninput="saveCurrentApiKey()" />
-        </div>
-        <div class="config-input-group" style="margin-bottom: 20px;">
-            <label>BATAS HARGA MAKSIMAL (USD)</label>
-            <select id="smsMaxPriceField" class="select-field">
-                <option value="0.30">$0.30</option>
-                <option value="0.50" selected>$0.50 (Rekomendasi)</option>
-                <option value="0.90">$0.90</option>
-            </select>
-        </div>
-        <div class="sms-info-tag">
-            <div>Negara: <span>Indonesia</span></div>
-            <div>Layanan: <span>Shopee</span></div>
-        </div>
-        <button class="btn-primary" id="btn-sms-code" onclick="requestSmsNumber()">Sewa Nomor Shopee</button>
-        <div id="smsLoadingText" style="display:none; font-size:12px; margin-top:10px; color:#aaa;"><i class="fa-spin fa-solid fa-circle-notch"></i> Loading...</div>
-        <div id="smsResultBox" class="sms-result-box">
-            <p><strong>Status:</strong> <span id="smsResStatus">-</span></p>
-            <p><strong>Nomor:</strong> <span id="smsResPhone">-</span></p>
-            <p><strong>ID:</strong> <span id="smsResId">-</span></p>
-        </div>
-    </div>
-
     <div class="history-card">
         <div class="history-title"><span>RIWAYAT</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
         <div id="historyList"></div>
@@ -96,11 +63,11 @@
         <div style="background: rgba(255,255,255,0.02); border: 1px dashed #3d3463; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
             <div>
                 <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
-                <input type="text" id="gitUser" class="config-field" style="color:#00ffcc;" placeholder="Username GitHub Anda" oninput="saveGitConfig()">
+                <input type="text" id="gitUser" class="config-field" placeholder="Username GitHub Anda" oninput="saveGitConfig()">
             </div>
             <div>
                 <label style="font-size:11px; color:#aaa; display:block; text-align:left;">NAMA REPO WEB</label>
-                <input type="text" id="gitRepo" class="config-field" style="color:#00ffcc;" placeholder="Nama Repositori" oninput="saveGitConfig()">
+                <input type="text" id="gitRepo" class="config-field" placeholder="Nama Repositori" oninput="saveGitConfig()">
             </div>
             <div>
                 <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB TOKEN (PAT)</label>
@@ -137,20 +104,16 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        const PROXY_BASE = "https://api.allorigins.win/raw?url=";
-        const TARGET_API_V2 = "https://api.smscode.gg/v2/orders";
         let DATA_DUMMY_DATABASE = [];
-        
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
-        let currentFileSha = ""; // Diperlukan GitHub API untuk update file
+        let currentFileSha = ""; 
 
         document.addEventListener("DOMContentLoaded", function() {
             // Load DB nama acak
             fetch('./data_pengguna.json').then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
 
             // Load saved settings
-            if(localStorage.getItem("smscode_user_api_key")) document.getElementById("smsApiKeyField").value = localStorage.getItem("smscode_user_api_key");
             if(localStorage.getItem("git_user")) document.getElementById("gitUser").value = localStorage.getItem("git_user");
             if(localStorage.getItem("git_repo")) document.getElementById("gitRepo").value = localStorage.getItem("git_repo");
             if(localStorage.getItem("git_token")) document.getElementById("gitToken").value = localStorage.getItem("git_token");
@@ -158,7 +121,7 @@
             if(localStorage.getItem("aplikasi_notes_2")) document.getElementById("userNotes2").value = localStorage.getItem("aplikasi_notes_2");
             if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
 
-            // Ambil Catatan Utama secara online dari GitHub saat halaman dibuka
+            // Ambil Catatan Utama secara online dari GitHub
             fetchGitHubNote();
         });
 
@@ -170,7 +133,7 @@
 
         function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
 
-        // AMBIL DATA DARI GITHUB (Agar semua HP mendapatkan data yang sama saat buka web)
+        // AMBIL DATA DARI GITHUB
         async function fetchGitHubNote() {
             const user = document.getElementById("gitUser").value.trim();
             const repo = document.getElementById("gitRepo").value.trim();
@@ -193,13 +156,11 @@
                 
                 if(res.status === 200) {
                     const data = await res.json();
-                    currentFileSha = data.sha; // Ambil tanda enkripsi ID file
-                    // Dekode data teks dari sistem Base64 internal GitHub
+                    currentFileSha = data.sha;
                     document.getElementById("userNotes").value = decodeURIComponent(escape(atob(data.content)));
                     statusLabel.innerText = "(Cloud Terhubung)";
                     statusLabel.style.color = "#00ffcc";
                 } else if(res.status === 404) {
-                    // Jika file belum ada di repo, anggap kosong baru
                     document.getElementById("userNotes").value = "";
                     statusLabel.innerText = "(File Baru Terdeteksi)";
                 }
@@ -209,7 +170,7 @@
             }
         }
 
-        // KUNCI & SIMPAN DATA KE GITHUB KETIKA ADMIN SELESAI EDIT
+        // KUNCI & SIMPAN DATA KE GITHUB
         async function toggleAdminAccess() {
             const noteUtama = document.getElementById("userNotes");
             const btnAdmin = document.getElementById("btnAdminAuth");
@@ -228,13 +189,12 @@
                     showToast("Akses Terbuka! 🔓");
                 } else if (inputPin !== null) { alert("PIN Salah!"); }
             } else {
-                // Proses Mengunci Kembali Sekaligus Upload Otomatis ke Repo GitHub
                 const user = document.getElementById("gitUser").value.trim();
                 const repo = document.getElementById("gitRepo").value.trim();
                 const token = document.getElementById("gitToken").value.trim();
                 
                 if(!user || !repo || !token) {
-                    alert("Gagal Menyimpan! Konfigurasi Cloud GitHub Anda tidak valid atau kosong.");
+                    alert("Gagal Menyimpan! Konfigurasi Cloud GitHub Anda tidak valid.");
                     return;
                 }
 
@@ -243,14 +203,13 @@
 
                 const url = `https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`;
                 const contentText = noteUtama.value;
-                // Encode teks ke format Base64 standard GitHub API
                 const base64Content = btoa(unescape(encodeURIComponent(contentText)));
 
                 const bodyPayload = {
                     message: "Update catatan utama via Web Generator",
                     content: base64Content
                 };
-                if(currentFileSha) bodyPayload.sha = currentFileSha; // Wajib dikirim jika file sudah ada sebelumnya
+                if(currentFileSha) bodyPayload.sha = currentFileSha;
 
                 try {
                     const res = await fetch(url, {
@@ -261,7 +220,7 @@
 
                     if(res.ok) {
                         const resData = await res.json();
-                        currentFileSha = resData.content.sha; // Perbarui ID SHA terbaru
+                        currentFileSha = resData.content.sha;
                         isAdminAuthenticated = false;
                         noteUtama.setAttribute("readonly", "true");
                         noteUtama.classList.add("admin-locked");
@@ -273,52 +232,12 @@
                         showToast("Tersimpan di Semua HP! ☁️🔒");
                     } else { throw new Error(); }
                 } catch(e) {
-                    alert("Gagal mengupload ke GitHub. Cek kembali kevalidan token PAT atau nama repo Anda.");
+                    alert("Gagal mengupload ke GitHub. Cek kembali kevalidan token.");
                     statusLabel.innerText = "(Gagal Menyimpan)";
                 } finally {
                     btnAdmin.disabled = false;
                 }
             }
-        }
-
-        // --- SISTEM SEWA NOMOR SMSCODE ---
-        function saveCurrentApiKey() { localStorage.setItem("smscode_user_api_key", document.getElementById("smsApiKeyField").value.trim()); }
-        async function requestSmsNumber() {
-            const btnSms = document.getElementById('btn-sms-code');
-            const loadingText = document.getElementById('smsLoadingText');
-            const resultBox = document.getElementById('smsResultBox');
-            const resStatus = document.getElementById('smsResStatus');
-            const resPhone = document.getElementById('smsResPhone');
-            const resId = document.getElementById('smsResId');
-            const activeApiKey = document.getElementById("smsApiKeyField").value.trim().replace(/[^\x20-\x7E]/g, "");
-            const selectedMaxPrice = document.getElementById("smsMaxPriceField").value;
-
-            btnSms.disabled = true; loadingText.style.display = "block"; resultBox.style.display = "none"; resultBox.classList.remove('sms-error-mode');
-
-            if (!activeApiKey) {
-                setTimeout(() => {
-                    loadingText.style.display = "none"; btnSms.disabled = false; resultBox.classList.add('sms-error-mode');
-                    resStatus.innerText = "API Key Kosong"; resPhone.innerText = "Gagal Memproses"; resultBox.style.display = "block";
-                }, 300); return;
-            }
-
-            try {
-                const fullUrl = PROXY_BASE + encodeURIComponent(TARGET_API_V2);
-                const response = await fetch(fullUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + activeApiKey, 'idempotency-key': "key-" + Date.now() },
-                    body: JSON.stringify({ catalog_product_id: 1, max_price: selectedMaxPrice, quantity: 1 })
-                });
-                const data = await response.json();
-                if (response.ok && data.orders && data.orders.length > 0) {
-                    const orderData = data.orders[0];
-                    resStatus.innerText = "Sukses"; resStatus.style.color = "#00ffcc";
-                    resPhone.innerText = orderData.phoneNumber || "Sukses"; resId.innerText = orderData.id || "-";
-                    if(orderData.phoneNumber) { tampilkanDanSalin(orderData.phoneNumber); tambahKeRiwayat(`Sewa Shopee: ${orderData.phoneNumber}`); }
-                } else { throw new Error(data.error ? data.error.message : "Gagal"); }
-            } catch (error) {
-                resultBox.classList.add('sms-error-mode'); resStatus.innerText = "Gagal"; resPhone.innerText = "Error Validasi"; resId.innerText = error.message;
-            } finally { loadingText.style.display = "none"; btnSms.disabled = false; resultBox.style.display = "block"; }
         }
 
         // --- GENERATOR NAMA ---
