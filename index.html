@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v2.9</title>
+    <title>Generator Data Futuristik v3.0</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -34,16 +34,22 @@
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .config-input-group { text-align: left; margin-bottom: 15px; }
-        .config-input-group label { display: block; font-size: 11px; font-weight: bold; color: #aaa; margin-bottom: 5px; }
+        
+        /* KLIK REPO CONFIG */
         .config-field { width: 100%; padding: 12px; background: #110d24; border: 1px solid #3d3463; border-radius: 8px; color: #00ffcc; font-family: monospace; font-size: 13px; text-align: center; outline: none; }
-        .admin-locked { background: #141026 !important; border-color: #2b2447 !important; color: #666 !important; cursor: not-allowed; }
-        .btn-admin-control { margin-top: 8px; padding: 6px 12px; font-size: 11px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
+        .btn-admin-control { margin-top: 8px; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
+        
+        /* STYLE KHUSUS LIST INTERAKTIF BARIS CATATAN UTAMA */
+        .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
+        .note-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .note-num-btn { background: #3d3463; color: #00ffcc; border: 1px solid #5a4f8c; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; min-width: 35px; text-align: center; }
+        .note-num-btn:hover { background: #00ffcc; color: #141026; box-shadow: 0 0 8px #00ffcc; }
+        .note-text-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 13px; padding: 4px 0; }
+        .note-text-input[readonly] { cursor: default; }
     </style>
 </head>
 <body>
 
-    <!-- 1. CARD UTAMA (GENERATOR DATA) -->
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator</div>
         <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
@@ -53,11 +59,9 @@
         </div>
     </div>
 
-    <!-- 2. NOTES SECTION (CATATAN SINKRONISASI) -->
     <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 10px;">
         <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Sinkronisasi Multi-Device</div>
         
-        <!-- KOLOM CONFIG GITHUB -->
         <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
             <div>
                 <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
@@ -74,26 +78,26 @@
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
-            <!-- KOLOM 1: SINKRONISASI BACA OTOMATIS -->
             <div>
                 <div style="font-size: 13px; font-weight: bold; color: #ff007f; margin-bottom: 5px; text-align: left;">
                     <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA (LIVE)
                     <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Membaca...)</span>
                 </div>
-                <textarea id="userNotes" readonly class="admin-locked" placeholder="Memuat data dari cloud..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical;"></textarea>
+                
+                <div id="notesContainer" class="notes-list-container">
+                    </div>
+
                 <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
                     <i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit
                 </button>
             </div>
             
-            <!-- KOLOM 2 -->
             <div>
                 <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">DATA PENTING / COPAS</div>
                 <textarea id="userNotes2" placeholder="Tempel data acak..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px;" oninput="saveLocalNotes('userNotes2', 'aplikasi_notes_2')"></textarea>
                 <div style="height: 31px;"></div>
             </div>
             
-            <!-- KOLOM 3 -->
             <div>
                 <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">LAIN-LAIN / TODO</div>
                 <textarea id="userNotes3" placeholder="Info lainnya..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px;" oninput="saveLocalNotes('userNotes3', 'aplikasi_notes_3')"></textarea>
@@ -102,7 +106,6 @@
         </div>
     </div>
 
-    <!-- 3. RIWAYAT (POSISI SEKARANG DI BAWAH SENDIRI) -->
     <div class="history-card" style="width: 100%; max-width: 900px; margin-top: 10px;">
         <div class="history-title"><span>RIWAYAT GENERATOR DATA</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
         <div id="historyList"></div>
@@ -115,6 +118,7 @@
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
         let currentFileSha = ""; 
+        let rawNotesText = ""; // Tempat menyimpan data string gabungan mentah
 
         const DEFAULT_USER = "bgszp";
         const DEFAULT_REPO = "bgszp.github.io";
@@ -144,6 +148,93 @@
 
         function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
 
+        // MENGUBAH STRING TEKS MENJADI BARISAN ELEMENT INPUT BERNOMOR
+        function renderNotesList(fullText) {
+            rawNotesText = fullText;
+            const container = document.getElementById("notesContainer");
+            container.innerHTML = "";
+
+            // Pisahkan teks per baris baru
+            let lines = fullText.split("\n");
+            
+            // Jika kosong sekali, beri pemicu baris awal
+            if(lines.length === 0 || (lines.length === 1 && lines[0].trim() === "")) {
+                lines = [""];
+            }
+
+            lines.forEach((text, index) => {
+                const rowNum = index + 1;
+                
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "note-row";
+
+                // Membuat Tombol Nomor untuk Fitur Auto Copy Klik
+                const numBtn = document.createElement("button");
+                numBtn.className = "note-num-btn";
+                numBtn.innerText = `[${rowNum}]`;
+                numBtn.title = "Klik untuk salin baris ini";
+                numBtn.onclick = function() {
+                    const txtToCopy = inputField.value;
+                    if(txtToCopy.trim() !== "") {
+                        if (navigator.clipboard && window.isSecureContext) {
+                            navigator.clipboard.writeText(txtToCopy).then(() => showToast(`Salin Baris ${rowNum}: "${txtToCopy.substring(0,15)}..." ✨`));
+                        }
+                    }
+                };
+
+                // Area Input Teks
+                const inputField = document.createElement("input");
+                inputField.type = "text";
+                inputField.className = "note-text-input";
+                inputField.value = text;
+                
+                // Kondisi awal dikunci sebelum Unlock Admin
+                if(!isAdminAuthenticated) {
+                    inputField.setAttribute("readonly", "true");
+                }
+
+                // Handler deteksi tombol Enter saat mengedit data di baris aktif
+                inputField.onkeydown = function(e) {
+                    if (e.key === "Enter" && isAdminAuthenticated) {
+                        e.preventDefault();
+                        insertNewRowAfter(index);
+                    }
+                };
+
+                rowDiv.appendChild(numBtn);
+                rowDiv.appendChild(inputField);
+                container.appendChild(rowDiv);
+            });
+        }
+
+        // OTOMATIS BIKIN BARIS BARU SAAT TEKAN ENTER
+        function insertNewRowAfter(currentIndex) {
+            const inputs = document.querySelectorAll(".note-text-input");
+            let newLines = [];
+            inputs.forEach(inp => newLines.push(inp.value));
+            
+            // Sisipkan baris kosong tepat di bawah indeks aktif
+            newLines.splice(currentIndex + 1, 0, "");
+            
+            // Gambar ulang struktur baris baru
+            renderNotesList(newLines.join("\n"));
+            
+            // Pindahkan fokus kursor ke baris baru tersebut secara otomatis
+            const updatedInputs = document.querySelectorAll(".note-text-input");
+            if(updatedInputs[currentIndex + 1]) {
+                updatedInputs[currentIndex + 1].focus();
+            }
+        }
+
+        // KUMPULKAN KEMBALI DATA INPUT MENJADI SATU STRING MENTAH
+        function packInputsToString() {
+            const inputs = document.querySelectorAll(".note-text-input");
+            let lineArray = [];
+            inputs.forEach(inp => lineArray.push(inp.value));
+            return lineArray.join("\n");
+        }
+
+        // FUNGSI BACA AMBIL DARI GITHUB AUTOMATIC
         async function autoFetchForEveryone() {
             const statusLabel = document.getElementById("syncStatus");
             statusLabel.innerText = "(Memantau Live...)";
@@ -154,12 +245,12 @@
                 const res = await fetch(url);
                 if(res.ok) {
                     const textData = await res.text();
-                    document.getElementById("userNotes").value = textData;
+                    renderNotesList(textData);
                     statusLabel.innerText = "(Mode Pantau Aktif)";
                     statusLabel.style.color = "#00ffcc";
                     fetchShaQuietly();
                 } else {
-                    document.getElementById("userNotes").value = "";
+                    renderNotesList("");
                     statusLabel.innerText = "(Catatan Kosong)";
                 }
             } catch(e) {
@@ -182,8 +273,8 @@
             } catch(e){}
         }
 
+        // PROSES UNLOCK KEAMANAN PIN ADMIN & SAVE CLOUD
         async function toggleAdminAccess() {
-            const noteUtama = document.getElementById("userNotes");
             const btnAdmin = document.getElementById("btnAdminAuth");
             const iconLock = document.getElementById("adminLockIcon");
             const statusLabel = document.getElementById("syncStatus");
@@ -193,8 +284,11 @@
                 const inputPin = prompt("Masukkan PIN Keamanan Admin:");
                 if (inputPin === ADMIN_PIN) {
                     isAdminAuthenticated = true;
-                    noteUtama.removeAttribute("readonly");
-                    noteUtama.classList.remove("admin-locked");
+                    
+                    // Buka gembok seluruh field input baris notes
+                    const inputs = document.querySelectorAll(".note-text-input");
+                    inputs.forEach(inp => inp.removeAttribute("readonly"));
+
                     configBox.style.display = "grid"; 
                     btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
                     btnAdmin.style.background = "#ff007f";
@@ -215,11 +309,13 @@
                 btnAdmin.disabled = true;
 
                 const url = `https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`;
-                const contentText = noteUtama.value;
-                const base64Content = btoa(unescape(encodeURIComponent(contentText)));
+                
+                // Ambil string teks gabungan dari baris input yang telah diedit
+                const combinedText = packInputsToString();
+                const base64Content = btoa(unescape(encodeURIComponent(combinedText)));
 
                 const bodyPayload = {
-                    message: "Update live via Admin Web Perangkat",
+                    message: "Update list bernomor baris via Admin Web Perangkat",
                     content: base64Content
                 };
                 
@@ -237,8 +333,11 @@
                         const resData = await res.json();
                         currentFileSha = resData.content.sha;
                         isAdminAuthenticated = false;
-                        noteUtama.setAttribute("readonly", "true");
-                        noteUtama.classList.add("admin-locked");
+                        
+                        // Kunci kembali seluruh baris input teks
+                        const inputs = document.querySelectorAll(".note-text-input");
+                        inputs.forEach(inp => inp.setAttribute("readonly", "true"));
+
                         configBox.style.display = "none"; 
                         btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
                         btnAdmin.style.background = "#1a1535";
@@ -246,6 +345,9 @@
                         statusLabel.innerText = "(Mode Pantau Aktif)";
                         statusLabel.style.color = "#00ffcc";
                         showToast("Tersimpan secara Global! ☁️");
+                        
+                        // Muat ulang isi render list terbaru agar rapi
+                        renderNotesList(combinedText);
                     } else { throw new Error(); }
                 } catch(e) {
                     alert("Gagal memperbarui Cloud. Pastikan Token PAT Anda benar.");
