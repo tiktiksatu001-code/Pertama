@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v2.3</title>
+    <title>Generator Data Futuristik v2.4</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -261,16 +261,15 @@
         </div>
 
         <div class="config-input-group" style="margin-bottom: 20px;">
-            <label><i class="fa-solid fa-tags"></i> PILIH BATAS HARGA MAKSIMAL (IDR)</label>
+            <label><i class="fa-solid fa-tags"></i> PILIH BATAS HARGA MAKSIMAL (USD native)</label>
             <select id="smsMaxPriceField" class="select-field">
-                <option value="3000">Rp 3.000</option>
-                <option value="5000">Rp 5.000</option>
-                <option value="7000">Rp 7.000</option>
-                <option value="9000">Rp 9.000</option>
-                <option value="12000">Rp 12.000</option>
-                <option value="15000" selected>Rp 15.000 (Rekomendasi / Default)</option>
-                <option value="20000">Rp 20.000</option>
-                <option value="25000">Rp 25.000</option>
+                <option value="0.30">$0.30 (~Rp 4.800)</option>
+                <option value="0.40">$0.40 (~Rp 6.400)</option>
+                <option value="0.50" selected>$0.50 (~Rp 8.000 - Rekomendasi)</option>
+                <option value="0.70">$0.70 (~Rp 11.200)</option>
+                <option value="0.90">$0.90 (~Rp 14.400)</option>
+                <option value="1.20">$1.20 (~Rp 19.200)</option>
+                <option value="1.50">$1.50 (~Rp 24.000)</option>
             </select>
         </div>
 
@@ -284,7 +283,7 @@
         </button>
 
         <div id="smsLoadingText" class="sms-loading">
-            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan aman ke SMSCode...
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan aman via Sistem v2...
         </div>
 
         <div id="smsResultBox" class="sms-result-box">
@@ -326,9 +325,8 @@
     </div>
 
     <script>
-        // Menggunakan proxy open-source AllOrigins yang tidak memerlukan aktivasi berkala
         const PROXY_BASE = "https://api.allorigins.win/raw?url=";
-        const TARGET_API = "https://api.smscode.gg/v1/orders";
+        const TARGET_API_V2 = "https://api.smscode.gg/v2/orders";
         let DATA_DUMMY_DATABASE = [];
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -361,7 +359,7 @@
             const resId = document.getElementById('smsResId');
 
             const activeApiKey = document.getElementById("smsApiKeyField").value.trim().replace(/[^\x20-\x7E]/g, "");
-            const selectedMaxPrice = parseInt(document.getElementById("smsMaxPriceField").value, 10);
+            const selectedMaxPrice = document.getElementById("smsMaxPriceField").value;
 
             btnSms.disabled = true;
             loadingText.style.display = "block";
@@ -385,9 +383,9 @@
             const uniqueIdempotencyKey = "key-" + Date.now();
 
             try {
-                // Melakukan request POST dengan membungkus URL di dalam AllOrigins Proxy
-                const fullUrl = PROXY_BASE + encodeURIComponent(TARGET_API);
+                const fullUrl = PROXY_BASE + encodeURIComponent(TARGET_API_V2);
                 
+                // Mengikuti aturan Money Shape V2 USD native dari dokumen panduan resmi
                 const response = await fetch(fullUrl, {
                     method: 'POST',
                     headers: {
@@ -396,9 +394,8 @@
                         'idempotency-key': uniqueIdempotencyKey
                     },
                     body: JSON.stringify({
-                        country: "ID",
-                        service: "shopee",
-                        max_price: selectedMaxPrice,
+                        catalog_product_id: 1, // ID default Shopee Indonesia di sistem V2
+                        max_price: selectedMaxPrice, // Mengirimkan decimal string USD murni (contoh: "0.50")
                         quantity: 1
                     })
                 });
@@ -417,16 +414,17 @@
                         tambahKeRiwayat(`Sewa Shopee: ${orderData.phoneNumber}`);
                     }
                 } else {
-                    const errMsg = data.error ? data.error.message : "Gagal memproses sewa nomor.";
+                    // Ekstraksi kode error terstruktur sesuai instruksi Error Codes
+                    const errMsg = data.error ? `${data.error.code}: ${data.error.message}` : "Gagal memproses sewa nomor.";
                     throw new Error(errMsg);
                 }
 
             } catch (error) {
                 resultBox.classList.add('sms-error-mode');
-                resStatus.innerText = "Gagal Mengubungi API";
+                resStatus.innerText = "Respons Gagal";
                 resStatus.style.color = "#ff4a4a";
-                resPhone.innerText = "Respons Error Sistem";
-                resId.innerText = error.message + " (Pastikan saldo IDR akun Anda mencukupi untuk harga pilihan atau coba naikkan batas harga maksimal di menu dropdown).";
+                resPhone.innerText = "Detail Kegagalan Server";
+                resId.innerText = error.message + " (Jika muncul INSUFFICIENT_BALANCE atau NO_OFFER_AVAILABLE, silakan naikkan limit batas harga USD di menu dropdown di atas).";
             } finally {
                 loadingText.style.display = "none";
                 btnSms.disabled = false;
