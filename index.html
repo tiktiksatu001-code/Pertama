@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v3.3</title>
+    <title>Generator Data Futuristik v3.4</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -43,14 +43,28 @@
         .btn-refresh-note:hover { background: #3d3463; box-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
         
         .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
-        .note-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .note-num-btn { background: #3d3463; color: #00ffcc; border: 1px solid #5a4f8c; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; min-width: 35px; text-align: center; }
-        .note-num-btn:hover { background: #00ffcc; color: #141026; box-shadow: 0 0 8px #00ffcc; }
+        .note-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         
-        .note-text-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 13px; padding: 4px 0; display: block; width: 100%; }
+        /* TOMBOL NOMOR BERKUALITAS (LEBIH BESAR & NYAMAN DI-KLIK) */
+        .note-num-btn { 
+            background: #3d3463; 
+            color: #00ffcc; 
+            border: 1px solid #5a4f8c; 
+            padding: 8px 14px; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            min-width: 52px; 
+            text-align: center; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .note-num-btn:hover { background: #00ffcc; color: #141026; box-shadow: 0 0 12px #00ffcc; }
+        .note-num-btn:active { transform: scale(0.95); }
         
-        /* ADJUSTMENT SEMENTARA WARNA STRUKTUR COPAST TEKS UNTUK PEMBATAS '|' */
-        .note-display-wrapper { flex: 1; font-size: 13px; padding: 4px 0; word-break: break-all; }
+        .note-text-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 14px; padding: 6px 0; display: block; width: 100%; }
+        
+        .note-display-wrapper { flex: 1; font-size: 14px; padding: 6px 0; word-break: break-all; }
         .text-before-pipe { color: #ffffff; font-weight: 500; }
         .text-after-pipe { color: #6e678a; font-style: italic; }
     </style>
@@ -174,7 +188,6 @@
                 const rowDiv = document.createElement("div");
                 rowDiv.className = "note-row";
 
-                // 1. TOMBOL COPY DENGAN FILTRASI BARU MENGGUNAKAN TANDA '|'
                 const numBtn = document.createElement("button");
                 numBtn.className = "note-num-btn";
                 numBtn.innerText = `[${rowNum}]`;
@@ -184,14 +197,13 @@
                     if(currentInpValue.trim() !== "") {
                         let finalCopyText = currentInpValue;
                         
-                        // SEKARANG MENGGUNAKAN PEMBATAS '|'
                         if(currentInpValue.includes("|")) {
                             finalCopyText = currentInpValue.split("|")[0].trim();
                         }
 
                         if (navigator.clipboard && window.isSecureContext && finalCopyText !== "") {
                             navigator.clipboard.writeText(finalCopyText).then(() => {
-                                showToast(`Salin Baris ${rowNum} (Tanpa Note) ✨`);
+                                showToast(`Salin Baris ${rowNum}! ✨`);
                             });
                         }
                     }
@@ -199,7 +211,6 @@
 
                 rowDiv.appendChild(numBtn);
 
-                // 2. LOGIKA STRUKTUR TAMPILAN
                 if(isAdminAuthenticated) {
                     const inputField = document.createElement("input");
                     inputField.type = "text";
@@ -218,7 +229,6 @@
                     const displayWrapper = document.createElement("div");
                     displayWrapper.className = "note-display-wrapper";
                     
-                    // SEKARANG MEMILAH BERDASARKAN TANDA '|'
                     if(text.includes("|")) {
                         const parts = text.split("|");
                         const beforePipe = parts[0];
