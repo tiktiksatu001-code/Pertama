@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generator Data Futuristik v3.5</title>
-    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    
     <style>
         * { box-sizing: border-box; transition: all 0.3s ease; }
         body { 
@@ -34,36 +32,20 @@
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        
         .config-field { width: 100%; padding: 12px; background: #110d24; border: 1px solid #3d3463; border-radius: 8px; color: #00ffcc; font-family: monospace; font-size: 13px; text-align: center; outline: none; }
         .btn-admin-control { margin-top: 8px; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
-        
         .notes-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .btn-refresh-note { background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
         .btn-refresh-note:hover { background: #3d3463; box-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
-        
         .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
         .note-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        
-        /* TOMBOL NOMOR BERKUALITAS (LEBIH BESAR & NYAMAN DI-KLIK) */
         .note-num-btn { 
-            background: #3d3463; 
-            color: #00ffcc; 
-            border: 1px solid #5a4f8c; 
-            padding: 8px 14px; 
-            border-radius: 8px; 
-            font-size: 15px; 
-            font-weight: 800; 
-            cursor: pointer; 
-            min-width: 52px; 
-            text-align: center; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            background: #3d3463; color: #00ffcc; border: 1px solid #5a4f8c; padding: 8px 14px; border-radius: 8px; 
+            font-size: 15px; font-weight: 800; cursor: pointer; min-width: 52px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
         .note-num-btn:hover { background: #00ffcc; color: #141026; box-shadow: 0 0 12px #00ffcc; }
         .note-num-btn:active { transform: scale(0.95); }
-        
         .note-text-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 14px; padding: 6px 0; display: block; width: 100%; }
-        
         .note-display-wrapper { flex: 1; font-size: 14px; padding: 6px 0; word-break: break-all; }
         .text-before-pipe { color: #ffffff; font-weight: 500; }
         .text-after-pipe { color: #6e678a; font-style: italic; }
@@ -109,9 +91,7 @@
                         <i class="fa-solid fa-rotate"></i> Refresh
                     </button>
                 </div>
-                
                 <div id="notesContainer" class="notes-list-container"></div>
-
                 <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
                     <i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit
                 </button>
@@ -173,7 +153,6 @@
 
         function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
 
-        // --- FUNGSI UNIVERSAL COPY (Dukungan penuh untuk Android WebView / APK / Browser) ---
         function eksekusiSalinTeks(teks) {
             if (navigator.clipboard && window.isSecureContext) {
                 return navigator.clipboard.writeText(teks);
@@ -215,14 +194,11 @@
                 numBtn.innerText = `[${rowNum}]`;
                 numBtn.onclick = function() {
                     const currentInpValue = document.getElementById(`inp-note-${index}`) ? document.getElementById(`inp-note-${index}`).value : text;
-                    
                     if(currentInpValue.trim() !== "") {
                         let finalCopyText = currentInpValue;
-                        
                         if(currentInpValue.includes("|")) {
                             finalCopyText = currentInpValue.split("|")[0].trim();
                         }
-
                         if(finalCopyText !== "") {
                             eksekusiSalinTeks(finalCopyText).then(() => {
                                 showToast(`Salin Baris ${rowNum}! ✨`);
@@ -239,7 +215,6 @@
                     inputField.id = `inp-note-${index}`;
                     inputField.className = "note-text-input";
                     inputField.value = text;
-
                     inputField.onkeydown = function(e) {
                         if (e.key === "Enter") {
                             e.preventDefault();
@@ -250,19 +225,16 @@
                 } else {
                     const displayWrapper = document.createElement("div");
                     displayWrapper.className = "note-display-wrapper";
-                    
                     if(text.includes("|")) {
                         const parts = text.split("|");
                         const beforePipe = parts[0];
                         const afterPipe = parts.slice(1).join("|");
-                        
                         displayWrapper.innerHTML = `<span class="text-before-pipe">${beforePipe}</span><span class="text-after-pipe">|${afterPipe}</span>`;
                     } else {
                         displayWrapper.innerHTML = `<span class="text-before-pipe">${text}</span>`;
                     }
                     rowDiv.appendChild(displayWrapper);
                 }
-
                 container.appendChild(rowDiv);
             });
         }
@@ -275,7 +247,6 @@
             });
             newLines.splice(currentIndex + 1, 0, "");
             renderNotesList(newLines.join("\n"));
-            
             const targetInput = document.getElementById(`inp-note-${currentIndex + 1}`);
             if(targetInput) targetInput.focus();
         }
@@ -293,7 +264,6 @@
             const statusLabel = document.getElementById("syncStatus");
             statusLabel.innerText = "(Memantau Live...)";
             const url = `https://bgszp.github.io/catatan_utama.txt?t=${Date.now()}`;
-
             try {
                 const res = await fetch(url);
                 if(res.ok) {
@@ -337,10 +307,8 @@
                 const inputPin = prompt("Masukkan PIN Keamanan Admin:");
                 if (inputPin === ADMIN_PIN) {
                     isAdminAuthenticated = true;
-                    
                     const savedStateText = rawNotesLines.join("\n");
                     renderNotesList(savedStateText);
-
                     configBox.style.display = "grid"; 
                     btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
                     btnAdmin.style.background = "#ff007f";
@@ -368,7 +336,6 @@
                     message: "Update live text vertical pipe divider via panel",
                     content: base64Content
                 };
-                
                 if(!currentFileSha) { await fetchShaQuietly(); }
                 if(currentFileSha) bodyPayload.sha = currentFileSha;
 
@@ -378,12 +345,10 @@
                         headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
                         body: JSON.stringify(bodyPayload)
                     });
-
                     if(res.ok) {
                         const resData = await res.json();
                         currentFileSha = resData.content.sha;
                         isAdminAuthenticated = false;
-                        
                         configBox.style.display = "none"; 
                         btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
                         btnAdmin.style.background = "#1a1535";
@@ -391,7 +356,6 @@
                         statusLabel.innerText = "(Mode Pantau Aktif)";
                         statusLabel.style.color = "#00ffcc";
                         showToast("Tersimpan secara Global! ☁️");
-                        
                         renderNotesList(combinedText);
                     } else { throw new Error(); }
                 } catch(e) {
@@ -403,7 +367,6 @@
             }
         }
 
-        // --- GENERATOR NAMA ---
         window.generateName = function() {
             if (DATA_DUMMY_DATABASE.length === 0) return;
             const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
@@ -414,7 +377,7 @@
         };
         window.generateUsername = function() {
             const val = document.getElementById('genNameOutput').value;
-            if (!val || val === "Data akan muncul di sini") return;
+            if (!val || val === "Data akan menuil di sini") return;
             const res = val.split(',')[0].trim().replace(/\s+/g, '.').toLowerCase();
             document.getElementById('genNameOutput').value = res;
             eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
