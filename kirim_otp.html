@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirim SMS OTP - OTP Instan</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Kirim OTP</h2>
+    <div class="form-group">
+        <label for="no_hp">Nomor HP Tujuan (Mulai dengan 08 / 62)</label>
+        <input type="text" id="no_hp" placeholder="Contoh: 081234567890">
+    </div>
+    <div class="form-group">
+        <label for="otp_code">Kode OTP (4-6 Digit)</label>
+        <input type="text" id="otp_code" placeholder="Contoh: 123456">
+    </div>
+    <button onclick="kirimOTP()">Kirim SMS OTP</button>
+
+    <div id="status"></div>
+</div>
+
+<script>
+    // --- KONFIGURASI API OTP INSTAN ---
+    // Ganti nilai-nilai di bawah ini sesuai dengan dokumentasi di https://otpinstan.com/docs/api
+    const API_URL = "https://otpinstan.com/api/v1/send"; // Contoh endpoint API
+    const API_KEY = "MASUKKAN_API_KEY_ANDA_DI_SINI"; // Token otorisasi Anda
+    
+    async function kirimOTP() {
+        const noHp = document.getElementById('no_hp').value;
+        const otpCode = document.getElementById('otp_code').value;
+        const statusDiv = document.getElementById('status');
+
+        if (!noHp || !otpCode) {
+            tampilkanStatus("Nomor HP dan Kode OTP harus diisi!", "error");
+            return;
+        }
+
+        // Pesan yang akan dikirim
+        const pesanTeks = `Kode rahasia Anda adalah: ${otpCode}. Jangan berikan kode ini kepada siapapun.`;
+
+        // Format body disesuaikan dengan mayoritas API (bisa 'target', 'number', 'phone', dll - cek di Docs)
+        const payload = {
+            target: noHp,
+            message: pesanTeks
+        };
+
+        try {
+            tampilkanStatus("Sedang mengirim...", "success");
+
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    // Header otorisasi bisa berbeda (contoh: "Authorization": `Bearer ${API_KEY}` atau "api-key": API_KEY)
+                    "Authorization": `Bearer ${API_KEY}` 
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            // Pengecekan status dari response API
+            if (response.ok && result.status === true) {
+                tampilkanStatus("OTP Berhasil Dikirim!", "success");
+            } else {
+                tampilkanStatus("Gagal mengirim: " + (result.message || "Terjadi kesalahan pada API"), "error");
+            }
+        } catch (error) {
+            tampilkanStatus("Koneksi error: " + error.message, "error");
+        }
+    }
+
+    function tampilkanStatus(pesan, tipe) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = pesan;
+        statusDiv.className = tipe; // 'success' atau 'error'
+        statusDiv.style.display = "block";
+    }
+</script>
+
+</body>
+</html>
