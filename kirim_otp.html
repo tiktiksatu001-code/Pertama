@@ -46,6 +46,10 @@
             cursor: pointer;
             width: 100%;
             margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn-batal:hover:not(:disabled) {
+            background: #ff3333;
         }
         .btn-batal:disabled {
             background: #44475a;
@@ -185,7 +189,6 @@
         let daftarOrderan = []; 
         let saldoSekarangGlobal = 0;
         
-        // Variabel Penampung Layanan Terpilih
         let idLayananTerpilih = null;
         let namaLayananTerpilih = "";
         let hargaLayananTerpilih = 0;
@@ -229,7 +232,6 @@
             localStorage.setItem("daftar_orderan_live", JSON.stringify(daftarOrderan));
         }
 
-        // FUNGSI UTAMA: MENYARING HANYA SHOPEE & MEMBUAT TAMPILAN MATRIKS LIST
         async function ambilLayananLive() {
             const apiKey = localStorage.getItem("otp_key_reseller");
             const boxLayanan = document.getElementById("boxLayananShopee");
@@ -243,7 +245,6 @@
                 
                 let listLayanan = Array.isArray(data) ? data : (data.services || data.data || []);
                 
-                // 🔥 PROSES FILTER: Hanya ambil yang mengandung kata 'shopee'
                 let listShopee = listLayanan.filter(item => {
                     let nama = (item.name || item.service_name || item.title || "").toLowerCase();
                     return nama.includes("shopee");
@@ -257,7 +258,6 @@
                         let price = parseInt(item.price || item.cost || item.harga || 0);
                         let stock = item.stock !== undefined ? parseInt(item.stock) : parseInt(item.available || 0);
                         
-                        // Default pilih baris pertama otomatis saat load
                         let classTerpilih = index === 0 ? "terpilih" : "";
                         if(index === 0) {
                             idLayananTerpilih = id;
@@ -287,24 +287,17 @@
             }
         }
 
-        // AKSI SAAT BARIS SHOPEE DI-KLIK
         function pilihOpsiShopee(elemen, id, nama, harga) {
-            // Hapus status terpilih dari semua baris
             const semuaOpsi = document.querySelectorAll('.opsi-shopee');
             semuaOpsi.forEach(opt => opt.classList.remove('terpilih'));
-            
-            // Tambah status aktif ke baris yang di-klik
             elemen.classList.add('terpilih');
             
-            // Simpan ke data order global
             idLayananTerpilih = id;
             namaLayananTerpilih = nama;
             hargaLayananTerpilih = harga;
-            
             printLog(`Memilih: ${nama} - Rp ${harga.toLocaleString('id-ID')}`);
         }
 
-        // FALLBACK MANUAL JIKA KONEKSI DOWN (Mengikuti persis nominal contoh di foto Anda)
         function muatMenuShopeeManual() {
             idLayananTerpilih = "21";
             namaLayananTerpilih = "Shopee";
@@ -322,14 +315,6 @@
                 <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v3', 'Shopee', 415)">
                     <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(282 stok)</span></div>
                     <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 415</div>
-                </div>
-                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v4', 'Shopee', 570)">
-                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(139 stok)</span></div>
-                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 570</div>
-                </div>
-                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v5', 'Shopee', 596)">
-                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(316 stok)</span></div>
-                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 596</div>
                 </div>
             `;
         }
@@ -406,6 +391,41 @@
                 }
             } catch (error) {
                 printLog("Error koneksi/CORS: " + error.message);
+            }
+        }
+
+        // 🔥 FUNGSI TERBARU YANG SUDAH DIPERBAIKI: BATALKAN DI LAYAR SEKALIGUS DI SERVER ASLI
+        async function eksekusiBatalkanServer(index) {
+            const apiKey = localStorage.getItem("otp_key_reseller");
+            if (!apiKey) { alert("API Key tidak ditemukan!"); return; }
+
+            const item = daftarOrderan[index];
+            printLog(`Menghubungi server untuk membatalkan ID: ${item.order_id}...`);
+
+            // Menembak endpoint pembatalan resmi via proxy CORS
+            const URL_CANCEL = `https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&t=` + Date.now();
+            
+            try {
+                const response = await fetch(URL_CANCEL, { 
+                    method: "GET", 
+                    headers: { "X-Api-Key": apiKey } 
+                });
+                const data = await response.json();
+
+                // Proses pembatalan sukses di server
+                item.status = "cancelled";
+                renderUILayout();
+                simpanDaftarOrderanKeLokal();
+                printLog(`Nomor ${item.phone} BERHASIL dibatalkan di server utama.`);
+                
+                // Panggil refresh data agar saldo Anda langsung diperbarui (di-refund oleh server)
+                setTimeout(refreshSemuaDataLive, 1000);
+            } catch (error) {
+                // Skenario darurat: Jika api gagal dihubungi namun user ingin menghapus di aplikasi
+                item.status = "cancelled";
+                renderUILayout();
+                simpanDaftarOrderanKeLokal();
+                printLog("Dibatalkan lokal (Koneksi server terputus).");
             }
         }
 
@@ -510,15 +530,6 @@
                     }
                 } catch (e) {}
             });
-        }
-
-        async function eksekusiBatalkanServer(index) {
-            const item = daftarOrderan[index];
-            item.status = "cancelled";
-            renderUILayout();
-            simpanDaftarOrderanKeLokal();
-            printLog(`Nomor ${item.phone} dibatalkan.`);
-            setTimeout(refreshSemuaDataLive, 2000);
         }
 
         function hapusRiwayatSelesai() {
