@@ -129,7 +129,7 @@
         const DEFAULT_REPO = "bgszp.github.io";
 
         document.addEventListener("DOMContentLoaded", function() {
-            fetch('./data_pengguna.json').then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
+    fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
 
             if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = DEFAULT_USER;
             else document.getElementById("gitUser").value = localStorage.getItem("git_user");
