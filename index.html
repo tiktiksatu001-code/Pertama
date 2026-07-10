@@ -53,6 +53,35 @@
 </head>
 <body>
 
+<!-- === PASTE DI BAWAH CONTAINER UTAMA GENERATOR === -->
+<div id="container-otp-tambahan" style="margin-top: 30px; padding: 0 20px;">
+    
+    <div class="pemicu-menu-utama" onclick="bukaPanelOTP()" style="cursor: pointer;">
+        <span>🛠️ Server 1 (Shopee Only Panel)</span>
+        <span id="panahMenuUtama">▼</span>
+    </div>
+
+    <div id="wadahOTP" style="display: none; margin-top: 15px; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid #2c2e5c; background: #121324;">
+        <iframe src="kirim_otp.html" width="100%" height="750px" style="border: none; display: block;"></iframe>
+    </div>
+
+    <script>
+        function bukaPanelOTP() {
+            const wadah = document.getElementById("wadahOTP");
+            const panah = document.getElementById("panahMenuUtama");
+            if (wadah.style.display === "none" || wadah.style.display === "") {
+                wadah.style.display = "block";
+                panah.style.transform = "rotate(180deg)";
+            } else {
+                wadah.style.display = "none";
+                panah.style.transform = "rotate(0deg)";
+            }
+        }
+    </script>
+</div>
+<!-- === SELESAI === -->
+
+    
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator</div>
         <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
@@ -386,85 +415,7 @@
         function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => { t.classList.remove('show'); }, 2000); }
     </script>
-<!-- ======================================================= -->
-<!-- COPY MULAI DARI SINI & PASTE DI DALAM <body> INDEX.HTML -->
-<!-- ======================================================= -->
 
-<!-- 1. GAYA TAMPILAN (CSS) KHUSUS UNTUK MENU DROPDOWN -->
-<style>
-    .pemicu-menu-utama {
-        background: linear-gradient(135deg, #5f27cd, #3c1e70);
-        border: 1px solid #6c5ce7;
-        border-radius: 12px;
-        padding: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 15px;
-        color: #fff;
-        box-shadow: 0 4px 15px rgba(95, 39, 205, 0.3);
-        transition: all 0.2s ease;
-        user-select: none;
-        margin-top: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        box-sizing: border-box;
-    }
-    .pemicu-menu-utama:hover {
-        opacity: 0.95;
-        box-shadow: 0 4px 20px rgba(95, 39, 205, 0.5);
-    }
-    #panahMenuUtama {
-        transition: transform 0.2s ease;
-        font-size: 13px;
-    }
-    #wadahOTP {
-        display: none; 
-        margin-top: 15px; 
-        width: 100%; 
-        border-radius: 12px; 
-        overflow: hidden; 
-        border: 1px solid #2c2e5c;
-        background: #121324;
-        box-sizing: border-box;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-</style>
-
-<!-- 2. STRUKTUR MENU & IFRAME (HTML) -->
-<div class="pemicu-menu-utama" onclick="bukaPanelOTP()">
-    <span>🛠️ Server 1 (Shopee Only Panel)</span>
-    <span id="panahMenuUtama">▼</span>
-</div>
-
-<div id="wadahOTP">
-    <!-- Pastikan file kirim_otp.html berada di dalam folder yang sama persis dengan index.html ini -->
-    <iframe src="kirim_otp.html" width="100%" height="750px" style="border: none; display: block;"></iframe>
-</div>
-
-<!-- 3. FUNGSI KLIK BUKA/TUTUP DROPDOWN (JAVASCRIPT) -->
-<script>
-    function bukaPanelOTP() {
-        const wadah = document.getElementById("wadahOTP");
-        const panah = document.getElementById("panahMenuUtama");
-        
-        if (wadah.style.display === "none" || wadah.style.display === "") {
-            wadah.style.display = "block";
-            // Memutar panah ke atas
-            panah.style.transform = "rotate(180deg)";
-        } else {
-            wadah.style.display = "none";
-            // Memutar panah kembali ke bawah
-            panah.style.transform = "rotate(0deg)";
-        }
-    }
-</script>
-
-<!-- ======================================================= -->
-<!-- SELESAI. COPY SAMPAI SINI SAJA                          -->
-<!-- ======================================================= -->
-    
 
     
 </body>
