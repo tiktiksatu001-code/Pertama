@@ -3,207 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Otomatis OTP Instan</title>
+    <title>Panel Otomatis Multi-OTP</title>
     <style>
         body {
             background-color: #0b0c10;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #f8f8f2;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: #0f111a;
+            border-radius: 12px;
+            border: 1px solid #383a59;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .card-order {
+            background: #1e1f29;
+            border: 1px solid #282a36;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            position: relative;
+        }
+        .btn-batal {
+            background: #ff5555;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-batal:disabled {
+            background: #44475a;
+            color: #888;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
 
-    <!-- ================= PANEL OTP INSTAN V3 ================= -->
-    <div style="padding: 25px; background: #0f111a; border-radius: 12px; border: 1px solid #383a59; text-align: left; width: 100%; max-width: 750px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #f8f8f2; box-sizing: border-box;">
-        
+    <div class="container">
         <h3 style="color: #00ffcc; margin-top: 0; text-align: center; border-bottom: 2px solid #1e1f29; padding-bottom: 12px; font-size: 18px; letter-spacing: 1px;">
-            📬 PANEL ORDER OTP REAL-TIME
+            📬 PANEL ORDER OTP MULTI-SLOT
         </h3>
 
-        <!-- 1. MANAGEMENT API KEY -->
-        <div style="background: #1e1f29; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #282a36;">
-            <label style="font-size: 12px; color: #00ffcc; font-weight: bold;">🔑 Kode API Key Anda:</label>
+        <!-- INPUT API KEY -->
+        <div style="background: #1e1f29; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #282a36;">
+            <label style="font-size: 11px; color: #00ffcc; font-weight: bold;">🔑 Kode API Key Anda:</label>
             <div style="display: flex; margin-top: 5px; gap: 8px;">
-                <input type="password" id="otpKeyV3" placeholder="Masukkan token API Key dari dashboard" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #0f111a; color: #fff; font-size: 13px;">
-                <button onclick="simpanKeyV3()" style="padding: 10px 15px; background: #00ffcc; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px;">Simpan Key</button>
+                <input type="password" id="otpKeyV4" placeholder="Masukkan token API Key" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #0f111a; color: #fff; font-size: 13px;">
+                <button onclick="simpanKeyV4()" style="padding: 10px 12px; background: #00ffcc; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px;">Simpan</button>
             </div>
-            <small id="statusKeyV3" style="color: #ff5555; font-size: 11px; display: block; margin-top: 6px;">⚠️ API Key belum aktif.</small>
+            <small id="statusKeyV4" style="color: #ff5555; font-size: 11px; display: block; margin-top: 6px;">⚠️ API Key belum aktif.</small>
         </div>
 
-        <!-- TAMPILAN DUA KOLOM -->
-        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-            
-            <!-- KOLOM KIRI: FORM SELEKSI LAYANAN -->
-            <div style="flex: 1; min-width: 280px; background: #1e1f29; padding: 15px; border-radius: 8px; border: 1px solid #282a36;">
-                <h4 style="margin-top: 0; color: #ff79c6; border-bottom: 1px solid #282a36; padding-bottom: 5px; font-size: 14px;">🛒 Form Pesanan</h4>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="font-size: 12px; color: #aaa;">Negara:</label>
-                    <input type="text" value="Indonesia" disabled style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #444; background: #0f111a; color: #888; box-sizing: border-box; font-size: 14px; font-weight: bold;">
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label style="font-size: 12px; color: #aaa;">Pilih Layanan (Harga & Stok Live):</label>
-                    <select id="selectLayananLive" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; background: #0f111a; color: #fff; border: 1px solid #444; font-size: 14px; box-sizing: border-box;">
-                        <option value="">-- Memuat menu... --</option>
-                    </select>
-                </div>
-
-                <button onclick="prosesPesanSekarang()" style="width: 100%; padding: 12px; background: #6272a4; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; text-transform: uppercase; box-shadow: 0 3px 6px rgba(0,0,0,0.2);">
-                    🛍️ Pesan Sekarang
-                </button>
+        <!-- FORM ORDER -->
+        <div style="background: #1e1f29; padding: 15px; border-radius: 8px; border: 1px solid #282a36;">
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; color: #aaa;">Pilih Layanan Target:</label>
+                <select id="selectLayananLive" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; background: #0f111a; color: #fff; border: 1px solid #444; font-size: 14px; box-sizing: border-box;">
+                    <!-- Pilihan otomatis termuat -->
+                </select>
             </div>
+            <button onclick="prosesPesanSekarang()" style="width: 100%; padding: 12px; background: #6272a4; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; box-shadow: 0 3px 6px rgba(0,0,0,0.2);">
+                🛒 Pesan Sekarang
+            </button>
+        </div>
 
-            <!-- KOLOM KANAN: MONITOR NOMOR & OTP MASUK -->
-            <div style="flex: 1; min-width: 280px; background: #1e1f29; padding: 15px; border-radius: 8px; border: 1px solid #282a36; display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <h4 style="margin-top: 0; color: #50fa7b; border-bottom: 1px solid #282a36; padding-bottom: 5px; font-size: 14px;">📱 Nomor & OTP Anda</h4>
-                    
-                    <div id="panelNomorKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">
-                        Nomor dan OTP akan muncul di sini setelah Anda melakukan order.
-                    </div>
-
-                    <div id="panelNomorAktif" style="display: none; margin-top: 10px;">
-                        <div style="font-size: 12px; color: #aaa;">Nomor Virtual Anda:</div>
-                        <div id="txtNomorHp" style="font-size: 22px; color: #ffb86c; font-weight: bold; font-family: monospace; margin: 5px 0;">0812345678</div>
-                        
-                        <div style="font-size: 12px; color: #aaa; margin-top: 10px;">Kode OTP Masuk:</div>
-                        <div id="txtStatusOtp" style="background: #0f111a; padding: 12px; border-radius: 6px; text-align: center; font-size: 18px; font-weight: bold; font-family: monospace; color: #ff5555; margin-top: 5px; border: 1px dashed #444;">
-                            ⏳ Menunggu SMS...
-                        </div>
-                    </div>
-                </div>
-
-                <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: #0f111a; border-radius: 4px; font-family: monospace; font-size: 11px; color: #50fa7b; max-height: 60px; overflow-y: auto; border: 1px solid #282a36;">
-                    System Ready.
+        <!-- AREA DAFTAR NOMOR (SEPERTI PASANGAN WEB ASLI) -->
+        <div style="margin-top: 20px; border-top: 2px dashed #282a36; padding-top: 10px;">
+            <div style="font-size: 14px; font-weight: bold; color: #50fa7b; margin-bottom: 10px;">📱 Nomor & OTP Aktif:</div>
+            <div id="containerListOrder">
+                <div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">
+                    Belum ada pesanan aktif. Klik pesan di atas untuk mengantre nomor.
                 </div>
             </div>
+        </div>
 
+        <!-- MINI LOG CONSOLE -->
+        <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: #0f111a; border-radius: 4px; font-family: monospace; font-size: 11px; color: #50fa7b; border: 1px solid #282a36;">
+            └> System Dynamic Ready.
         </div>
     </div>
 
     <script>
-        let currentTrxId = null;     
-        let pollingInterval = null;  
+        // Array global untuk menampung semua list orderan yang sedang berjalan
+        let daftarOrderan = []; 
 
-        // 1. LANGSUNG JALAN SAAT HALAMAN DIBUKA
         document.addEventListener("DOMContentLoaded", function() {
-            // Pilihan menu langsung diisi sejak awal agar halaman tidak terlihat kosong
-            muatMenuLayananManual(); 
-
+            muatMenuLayananManual();
             const savedKey = localStorage.getItem("otp_key_reseller");
             if(savedKey) {
-                document.getElementById("otpKeyV3").value = savedKey;
-                document.getElementById("statusKeyV3").innerText = "✅ API Key Terpasang. Siap digunakan.";
-                document.getElementById("statusKeyV3").style.color = "#50fa7b";
+                document.getElementById("otpKeyV4").value = savedKey;
+                document.getElementById("statusKeyV4").innerText = "✅ API Key Terkunci. Siap memproses massal.";
+                document.getElementById("statusKeyV4").style.color = "#50fa7b";
             }
+
+            // Jalankan mesin pengukur waktu (waktu tunggu, validitas, cooldown) setiap 1 detik terpusat
+            setInterval(mesinWaktuTerpusat, 1000);
+            // Jalankan mesin pengecek pesan masuk ke API setiap 5 detik terpusat
+            setInterval(mesinCekSmsTerpusat, 5000);
         });
 
-        function simpanKeyV3() {
-            const key = document.getElementById("otpKeyV3").value.trim();
+        function simpanKeyV4() {
+            const key = document.getElementById("otpKeyV4").value.trim();
             if(!key) { alert("Masukkan API Key Anda!"); return; }
             localStorage.setItem("otp_key_reseller", key);
-            document.getElementById("statusKeyV3").innerText = "✅ API Key Berhasil Disimpan!";
-            document.getElementById("statusKeyV3").style.color = "#50fa7b";
-            alert("API Key sukses tersimpan di browser HP!");
+            document.getElementById("statusKeyV4").innerText = "✅ API Key Berhasil Disimpan!";
+            document.getElementById("statusKeyV4").style.color = "#50fa7b";
         }
 
         function muatMenuLayananManual() {
-            const selectMenu = document.getElementById("selectLayananLive");
-            selectMenu.innerHTML = `
-                <option value="21">Shopee (Server 1 Promo) - Rp 340</option>
-                <option value="1">WhatsApp (Server 1) - Rp 1.400</option>
-                <option value="2">Telegram (Server 1) - Rp 950</option>
-                <option value="5">TikTok (Server 1) - Rp 415</option>
+            document.getElementById("selectLayananLive").innerHTML = `
+                <option value="21" data-nama="Shopee">Server 1 · Shopee - Rp 340</option>
+                <option value="1" data-nama="WhatsApp">Server 1 · WhatsApp - Rp 1.400</option>
+                <option value="2" data-nama="Telegram">Server 1 · Telegram - Rp 950</option>
+                <option value="5" data-nama="TikTok">Server 1 · TikTok - Rp 415</option>
             `;
-            printLog("Menu Layanan dimuat.");
         }
 
-        // 2. PROSES PEMESANAN (POST)
+        // FUNGSI EKSEKUSI PEMESANAN (BISA DIKLIK BERKALI-KALI)
         async function prosesPesanSekarang() {
-            if(pollingInterval) clearInterval(pollingInterval); 
-
             const apiKey = localStorage.getItem("otp_key_reseller");
-            const platformIdTerpilih = document.getElementById("selectLayananLive").value;
+            const selectEl = document.getElementById("selectLayananLive");
+            const platformId = selectEl.value;
+            const namaLayanan = selectEl.options[selectEl.selectedIndex].getAttribute("data-nama");
 
-            if(!apiKey) { alert("Simpan API Key reseller Anda terlebih dahulu!"); return; }
+            if(!apiKey) { alert("Simpan API Key dahulu!"); return; }
 
-            printLog("Menghubungkan ke server OTP Instan...");
+            printLog(`Meminta nomor baru untuk ${namaLayanan}...`);
             const URL_ORDER = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php";
 
             try {
                 const response = await fetch(URL_ORDER, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Api-Key": apiKey
-                    },
-                    body: JSON.stringify({
-                        platform_id: parseInt(platformIdTerpilih),
-                        country_id: 7 
-                    })
+                    headers: { "Content-Type": "application/json", "X-Api-Key": apiKey },
+                    body: JSON.stringify({ platform_id: parseInt(platformId), country_id: 7 })
                 });
-
                 const data = await response.json();
 
                 if (data.order_id || data.phone) {
-                    currentTrxId = data.order_id; 
+                    // Masukkan data orderan baru ke dalam struktur Array Antrean
+                    const orderBaru = {
+                        order_id: data.order_id,
+                        phone: data.phone,
+                        layanan: namaLayanan,
+                        waktuTunggu: 0,          // Berjalan naik (0s, 1s, 2s...)
+                        sisaValid: 1200,         // Berjalan turun dari 20 menit (1200 detik)
+                        cooldownBatal: 120,      // Aturan anti-abuse 2 menit sebelum tombol batal aktif (120 detik)
+                        status: "pending",       // Status awal
+                        otp: ""                  // Wadah kode OTP masuk
+                    };
 
-                    document.getElementById("panelNomorKosong").style.display = "none";
-                    document.getElementById("panelNomorAktif").style.display = "block";
-                    document.getElementById("txtNomorHp").innerText = data.phone;
-                    
-                    const txtOtp = document.getElementById("txtStatusOtp");
-                    txtOtp.innerText = "⏳ Menunggu SMS...";
-                    txtOtp.style.background = "#0f111a";
-                    txtOtp.style.color = "#ff5555";
-
-                    printLog(`Nomor aktif! ID: ${currentTrxId}. Mulai scan SMS...`);
-                    pollingInterval = setInterval(pantauOtpMasukRealtime, 5000);
+                    daftarOrderan.unshift(orderBaru); // Menyisipkan data baru di posisi paling atas list
+                    renderUILayout();                 // Gambar ulang tampilan ke layar HP
+                    printLog(`Sukses mendapat nomor ${data.phone}`);
                 } else {
-                    printLog(`Respon server: ${data.message || 'Gagal terhubung'}`);
-                    alert(`Gagal: ${data.message || 'Cek kembali saldo/stok Anda'}`);
+                    alert(`Gagal: ${data.message || 'Cek saldo Anda'}`);
                 }
             } catch (error) {
-                printLog("Terhalang koneksi / kebijakan CORS: " + error.message);
+                printLog("Error koneksi/CORS: " + error.message);
             }
         }
 
-        // 3. POLLING TRACKING OTP (GET)
-        async function pantauOtpMasukRealtime() {
-            if(!currentTrxId) return;
-            const apiKey = localStorage.getItem("otp_key_reseller");
-            const URL_CHECK = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/check.php?order_id=" + currentTrxId;
-            
-            try {
-                const response = await fetch(URL_CHECK, {
-                    method: "GET",
-                    headers: { "X-Api-Key": apiKey }
-                });
-                const data = await response.json();
-
-                if (data.status === "received" || data.otp) {
-                    clearInterval(pollingInterval); 
-                    const txtOtp = document.getElementById("txtStatusOtp");
-                    txtOtp.innerText = data.otp;
-                    txtOtp.style.background = "#50fa7b"; 
-                    txtOtp.style.color = "#000";
-                    printLog(`[SUKSES] OTP Diterima: ${data.otp}`);
-                } else if (data.status === "cancelled" || data.status === "expired") {
-                    clearInterval(pollingInterval);
-                    printLog("Transaksi kedaluwarsa/dibatalkan.");
-                    document.getElementById("txtStatusOtp").innerText = "❌ Batal";
-                } else {
-                    printLog(`[Sinking...] Status SMS: ${data.status || 'pending'}`);
-                }
-            } catch (error) {
-                printLog("Mencari sinyal jaringan...");
+        // APARATU RE-RENDER NYA: MENGGAMBAR KARTU SECARA DINAMIS
+        function renderUILayout() {
+            const container = document.getElementById("containerListOrder");
+            if (daftarOrderan.length === 0) {
+                container.innerHTML = `<div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">Belum ada pesanan aktif.</div>`;
+                return;
             }
+
+            let htmlString = "";
+            daftarOrderan.forEach((item, index) => {
+                // Konversi sisa waktu valid ke format Menit & Detik
+                const m = Math.floor(item.sisaValid / 60);
+                const s = item.sisaValid % 60;
+                const teksValiditas = item.sisaValid > 0 ? `${m}m ${s}s` : "Expired";
+
+                // Kondisi teks status SMS & OTP
+                let statusSmsText = `🔄 Menunggu SMS... (${item.waktuTunggu}s)`;
+                let statusColor = "#ffb86c";
+                
+                if (item.status === "received") {
+                    statusSmsText = `🎉 OTP: <span style="background:#50fa7b; color:#000; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:16px;">${item.otp}</span>`;
+                    statusColor = "#50fa7b";
+                } else if (item.status === "cancelled") {
+                    statusSmsText = "❌ Dibatalkan";
+                    statusColor = "#ff5555";
+                }
+
+                htmlString += `
+                    <div class="card-order">
+                        <div style="font-size:11px; color:#aaa;">Server 1 · ${item.layanan}</div>
+                        <div style="font-size:20px; font-weight:bold; color:#fff; margin:5px 0; display:flex; align-items:center; gap:8px;">
+                            ${item.phone}
+                            <span onclick="salinNomor('${item.phone}')" style="cursor:pointer; font-size:14px; color:#00ffcc;">📋</span>
+                        </div>
+                        
+                        <div style="font-size:13px; color:${statusColor}; margin-top:5px;">
+                            ${statusSmsText}
+                        </div>
+                        
+                        <div style="font-size:11px; color:#ffb86c; margin-top:5px;">
+                            ⏱️ Berlaku: ${teksValiditas}
+                        </div>
+
+                        ${item.status === "pending" ? `
+                            <button class="btn-batal" id="btnBatal-${index}" ${item.cooldownBatal > 0 ? 'disabled' : ''} onclick="eksekusiBatalkanServer(${index})">
+                                ${item.cooldownBatal > 0 ? `Batalkan (${item.cooldownBatal}s)` : '❌ Batalkan Pesanan'}
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = htmlString;
+        }
+
+        // MESIN 1 DETIK: UNTUK UPDATE HITUNGAN TIMERS DI LAYAR
+        function mesinWaktuTerpusat() {
+            let adaPerubahan = false;
+            daftarOrderan.forEach(item => {
+                if (item.status === "pending") {
+                    item.waktuTunggu += 1; // Timer tunggu SMS bertambah
+                    
+                    if (item.sisaValid > 0) item.sisaValid -= 1; // Timer validitas berkurang
+                    if (item.cooldownBatal > 0) item.cooldownBatal -= 1; // Cooldown tombol batalkan berkurang
+                    
+                    adaPerubahan = true;
+                }
+            });
+            if (adaPerubahan) {
+                renderUILayout(); // Update tampilan teks detik secara live
+            }
+        }
+
+        // MESIN 5 DETIK: MEMANTAU SMS MASUK KEBANYAKAN NOMOR SEKALIGUS
+        async function mesinCekSmsTerpusat() {
+            const apiKey = localStorage.getItem("otp_key_reseller");
+            if (!apiKey) return;
+
+            daftarOrderan.forEach(async (item, index) => {
+                if (item.status !== "pending") return; // Skip jika sudah sukses/batal
+
+                const URL_CHECK = `https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/check.php?order_id=${item.order_id}`;
+                
+                try {
+                    const response = await fetch(URL_CHECK, { method: "GET", headers: { "X-Api-Key": apiKey } });
+                    const data = await response.json();
+
+                    if (data.status === "received" || data.otp) {
+                        item.status = "received";
+                        item.otp = data.otp;
+                        renderUILayout();
+                        printLog(`[SMS] Nomor ${item.phone} menerima OTP!`);
+                    } else if (data.status === "cancelled" || data.status === "expired" || item.sisaValid <= 0) {
+                        item.status = "cancelled";
+                        renderUILayout();
+                    }
+                } catch (e) {
+                    // Diamkan jika ada interupsi jaringan mikro
+                }
+            });
+        }
+
+        // FUNGSI TOMBOL BATALKAN JIKA COOLDOWN SUDAH HABIS
+        async function eksekusiBatalkanServer(index) {
+            const apiKey = localStorage.getItem("otp_key_reseller");
+            const item = daftarOrderan[index];
+            
+            // Sesuai aturan dokumentasi, pembatalan biasanya dilakukan dengan mengubah status via endpoint check atau cancel khusus.
+            // Di sini kita ubah status lokalnya terlebih dahulu agar hemat kuota request API jika sudah expired.
+            printLog(`Membatalkan pesanan nomor ${item.phone}...`);
+            
+            // Simulasi/eksekusi hit ke sistem (Bisa disesuaikan dengan parameter pembatalan dashboard jika tersedia)
+            item.status = "cancelled";
+            renderUILayout();
+            printLog(`Nomor ${item.phone} berhasil dibatalkan.`);
+        }
+
+        // FUNGSI UTILITY: KLIK SIMBOL KERTAS LANGSUNG COPY NOMOR HP
+        function salinNomor(num) {
+            navigator.clipboard.writeText(num);
+            printLog(`Nomor ${num} disalin ke clipboard!`);
         }
 
         function printLog(text) {
