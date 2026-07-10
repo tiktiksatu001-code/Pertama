@@ -57,7 +57,7 @@
             cursor: not-allowed;
         }
         
-        /* 📱 GAYA BARU: Desain Pemicu Dropdown Lipat */
+        /* Wadah Dropdown Lipat */
         .pemicu-dropdown {
             background: #181933;
             border: 1px solid #32356b;
@@ -76,8 +76,6 @@
         .pemicu-dropdown:hover {
             background: #1e2042;
         }
-
-        /* Wadah list yang meluncur di bawah pemicu */
         .wrapper-layanan {
             background: #181933;
             border: 1px solid #32356b;
@@ -85,7 +83,7 @@
             border-radius: 0 0 12px 12px;
             overflow: hidden;
             margin-top: -1px;
-            display: none; /* Tersembunyi default, muncul saat diklik */
+            display: none; 
             position: relative;
             z-index: 10;
             max-height: 200px;
@@ -178,17 +176,15 @@
             <small id="statusKeyV5" style="color: #ff5555; font-size: 11px; display: block; margin-top: 6px;">⚠️ API Key belum aktif.</small>
         </div>
 
-        <!-- DROPDOWN SELECTION BOX (HEMAT TEMPAT) -->
+        <!-- DROPDOWN SELECTION BOX -->
         <div>
             <label style="font-size: 13px; color: #8b8da9; display: block; margin-bottom: 5px;">Layanan (Shopee Only)</label>
             
-            <!-- Tombol Utama Dropdown -->
             <div class="pemicu-dropdown" id="btnTriggerDropdown" onclick="toggleMekanismeDropdown()">
                 <span id="txtLayananTerpilihHeader">Menghubungkan server...</span>
                 <span id="ikonPanahDropdown" style="transition: transform 0.2s; font-size: 12px;">▼</span>
             </div>
 
-            <!-- List Menu yang bisa melipat/tersembunyi -->
             <div class="wrapper-layanan" id="boxLayananShopee">
                 <div style="text-align: center; padding: 20px; color: #6272a4; font-style: italic; font-size: 13px;">
                     Menghubungkan harga server...
@@ -266,7 +262,6 @@
             localStorage.setItem("daftar_orderan_live", JSON.stringify(daftarOrderan));
         }
 
-        // 🔄 FUNGSI BARU: Buka Tutup Menu Dropdown saat di klik
         function toggleMekanismeDropdown() {
             const box = document.getElementById("boxLayananShopee");
             const panah = document.getElementById("ikonPanahDropdown");
@@ -275,11 +270,11 @@
             if (box.style.display === "none" || box.style.display === "") {
                 box.style.display = "block";
                 panah.style.transform = "rotate(180deg)";
-                tombol.style.borderRadius = "12px 12px 0 0"; // Sisi bawah rata saat list terbuka
+                tombol.style.borderRadius = "12px 12px 0 0";
             } else {
                 box.style.display = "none";
                 panah.style.transform = "rotate(0deg)";
-                tombol.style.borderRadius = "12px"; // Bulat kembali saat menutup
+                tombol.style.borderRadius = "12px";
             }
         }
 
@@ -314,7 +309,6 @@
                             idLayananTerpilih = id;
                             namaLayananTerpilih = name;
                             hargaLayananTerpilih = price;
-                            // Set tampilan awal teks tombol dropdown
                             document.getElementById("txtLayananTerpilihHeader").innerHTML = `${name} — <span style="color:#b4b7ff;">Rp ${price.toLocaleString('id-ID')}</span>`;
                         }
 
@@ -349,11 +343,8 @@
             namaLayananTerpilih = nama;
             hargaLayananTerpilih = harga;
             
-            // Perbarui teks utama pada tombol pemicu dropdown
             document.getElementById("txtLayananTerpilihHeader").innerHTML = `${nama} — <span style="color:#b4b7ff;">Rp ${harga.toLocaleString('id-ID')}</span>`;
             printLog(`Memilih: ${nama} - Rp ${harga.toLocaleString('id-ID')}`);
-            
-            // Otomatis lipat/tutup kembali setelah memilih
             toggleMekanismeDropdown();
         }
 
@@ -517,8 +508,8 @@
                 let sisaValid = 1200 - detikBerlalu;
                 if (sisaValid < 0) sisaValid = 0;
 
-                // ⏱️ PENGATURAN COOLDOWN TETAP DIJAGA 17 DETIK
-                let cooldownBatal = 17 - detikBerlalu; 
+                // ⏱️ DIKEMBALIKAN KE 120 DETIK (2 MENIT) AGAR COCOK DENGAN ATURAN VALIDASI SERVER PUSAT
+                let cooldownBatal = 120 - detikBerlalu; 
                 if (cooldownBatal < 0) cooldownBatal = 0;
 
                 const m = Math.floor(sisaValid / 60);
@@ -554,7 +545,7 @@
 
                         ${item.status === "pending" ? `
                             <button class="btn-batal" id="btnBatal-${index}" ${cooldownBatal > 0 ? 'disabled' : ''} onclick="eksekusiBatalkanServer(${index})">
-                                ${cooldownBatal > 0 ? `Batalkan (${cooldownBatal}s)` : '❌ Batalkan Pesanan'}
+                                ${cooldownBatal > 0 ? `Batalkan (Tunggu ${cooldownBatal}s)` : '❌ Batalkan Pesanan'}
                             </button>
                         ` : ''}
                     </div>
