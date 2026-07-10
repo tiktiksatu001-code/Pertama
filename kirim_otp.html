@@ -134,7 +134,7 @@
             if(!apiKey) { alert("Simpan API Key reseller Anda terlebih dahulu!"); return; }
 
             printLog("Menghubungkan ke server OTP Instan...");
-            const URL_ORDER = "https://otpinstan.com/api/reseller/s1/order.php";
+            const URL_ORDER = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php";
 
             try {
                 const response = await fetch(URL_ORDER, {
@@ -178,8 +178,8 @@
         async function pantauOtpMasukRealtime() {
             if(!currentTrxId) return;
             const apiKey = localStorage.getItem("otp_key_reseller");
-            const URL_CHECK = `https://otpinstan.com/api/reseller/s1/check.php?order_id=${currentTrxId}`;
-
+            const URL_CHECK = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/check.php?order_id=" + currentTrxId;
+            
             try {
                 const response = await fetch(URL_CHECK, {
                     method: "GET",
