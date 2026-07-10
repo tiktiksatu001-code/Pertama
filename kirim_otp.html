@@ -92,7 +92,11 @@
 
         <!-- AREA DAFTAR NOMOR -->
         <div style="margin-top: 20px; border-top: 2px dashed #282a36; padding-top: 10px;">
-            <div style="font-size: 14px; font-weight: bold; color: #50fa7b; margin-bottom: 10px;">📱 Nomor & OTP Aktif:</div>
+            <div style="font-size: 14px; font-weight: bold; color: #50fa7b; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Nomor & OTP Aktif:</span>
+                <!-- Tombol pembersih riwayat -->
+                <span onclick="hapusRiwayatSelesai()" style="cursor: pointer; font-size: 11px; color: #ff5555; background: #1e1f29; padding: 4px 10px; border-radius: 5px; border: 1px solid #383a59; font-weight: normal;">🧹 Bersihkan</span>
+            </div>
             <div id="containerListOrder">
                 <div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">
                     Belum ada pesanan aktif. Klik pesan di atas untuk mengantre nomor.
@@ -112,6 +116,8 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             muatMenuLayananManual();
+            
+            // 1. Muat API Key yang tersimpan
             const savedKey = localStorage.getItem("otp_key_reseller");
             if(savedKey) {
                 document.getElementById("otpKeyV5").value = savedKey;
@@ -119,6 +125,14 @@
                 document.getElementById("statusKeyV5").style.color = "#50fa7b";
                 ambilSaldoLive();
             }
+
+            // 2. AMBIL DATA ORDERAN DARI PENYIMPANAN LOKAL (ANTI-REFRESH)
+            const orderanLokal = localStorage.getItem("daftar_orderan_live");
+            if (orderanLokal) {
+                daftarOrderan = JSON.parse(orderanLokal);
+                renderUILayout();
+            }
+
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 5000);
         });
@@ -130,6 +144,10 @@
             document.getElementById("statusKeyV5").innerText = "✅ API Key Berhasil Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
             ambilSaldoLive();
+        }
+
+        function simpanDaftarOrderanKeLokal() {
+            localStorage.setItem("daftar_orderan_live", JSON.stringify(daftarOrderan));
         }
 
         async function ambilSaldoLive() {
@@ -180,8 +198,6 @@
             if(!apiKey) { alert("Simpan API Key dahulu!"); return; }
 
             printLog(`Meminta nomor baru untuk ${namaLayanan}...`);
-            
-            // 🔥 PERBAIKAN: Ditambahkan "?t=" agar sistem anti-cache aktif saat meminta nomor baru
             const URL_ORDER = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php?t=" + Date.now();
 
             try {
@@ -198,19 +214,19 @@
                     if(saldoSekarangGlobal < 0) saldoSekarangGlobal = 0;
                     document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
 
+                    // 🔥 BERBASIS TIMESTAMP: Menggunakan jam buat untuk keakuratan sisa waktu
                     const orderBaru = {
                         order_id: data.order_id,
                         phone: data.phone,
                         layanan: namaLayanan,
-                        waktuTunggu: 0,          
-                        sisaValid: 1200,         
-                        cooldownBatal: 120,      
+                        waktu_dibuat: Date.now(), 
                         status: "pending",       
                         otp: ""                  
                     };
 
                     daftarOrderan.unshift(orderBaru); 
                     renderUILayout();                 
+                    simpanDaftarOrderanKeLokal(); // Amankan ke local storage
                     printLog(`Sukses mendapat nomor ${data.phone}`);
                     
                     setTimeout(ambilSaldoLive, 3000);
@@ -230,19 +246,36 @@
             }
 
             let htmlString = "";
-            daftarOrderan.forEach((item, index) => {
-                const m = Math.floor(item.sisaValid / 60);
-                const s = item.sisaValid % 60;
-                const teksValiditas = item.sisaValid > 0 ? `${m}m ${s}s` : "Expired";
+            let dataHarusDisimpanUlang = false;
 
-                let statusSmsText = `🔄 Menunggu SMS... (${item.waktuTunggu}s)`;
+            daftarOrderan.forEach((item, index) => {
+                // Hitung selisih waktu detik berjalan nyata
+                let detikBerlalu = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                
+                // Set batas kedaluwarsa otomatis di UI (1200 detik = 20 menit)
+                if (item.status === "pending" && detikBerlalu >= 1200) {
+                    item.status = "cancelled";
+                    dataHarusDisimpanUlang = true;
+                }
+
+                let sisaValid = 1200 - detikBerlalu;
+                if (sisaValid < 0) sisaValid = 0;
+
+                let cooldownBatal = 120 - detikBerlalu;
+                if (cooldownBatal < 0) cooldownBatal = 0;
+
+                const m = Math.floor(sisaValid / 60);
+                const s = sisaValid % 60;
+                const teksValiditas = sisaValid > 0 ? `${m}m ${s}s` : "Expired";
+
+                let statusSmsText = `🔄 Menunggu SMS... (${detikBerlalu}s)`;
                 let statusColor = "#ffb86c";
                 
                 if (item.status === "received") {
                     statusSmsText = `🎉 OTP: <span style="background:#50fa7b; color:#000; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:16px;">${item.otp}</span>`;
                     statusColor = "#50fa7b";
                 } else if (item.status === "cancelled") {
-                    statusSmsText = "❌ Dibatalkan";
+                    statusSmsText = "❌ Dibatalkan / Expired";
                     statusColor = "#ff5555";
                 }
 
@@ -259,12 +292,12 @@
                         </div>
                         
                         <div style="font-size:11px; color:#ffb86c; margin-top:5px;">
-                            ⏱️ Berlaku: ${teksValiditas}
+                            ⏱️ Sisa Waktu: ${teksValiditas}
                         </div>
 
                         ${item.status === "pending" ? `
-                            <button class="btn-batal" id="btnBatal-${index}" ${item.cooldownBatal > 0 ? 'disabled' : ''} onclick="eksekusiBatalkanServer(${index})">
-                                ${item.cooldownBatal > 0 ? `Batalkan (${item.cooldownBatal}s)` : '❌ Batalkan Pesanan'}
+                            <button class="btn-batal" id="btnBatal-${index}" ${cooldownBatal > 0 ? 'disabled' : ''} onclick="eksekusiBatalkanServer(${index})">
+                                ${cooldownBatal > 0 ? `Batalkan (${cooldownBatal}s)` : '❌ Batalkan Pesanan'}
                             </button>
                         ` : ''}
                     </div>
@@ -272,19 +305,13 @@
             });
 
             container.innerHTML = htmlString;
+            if (dataHarusDisimpanUlang) simpanDaftarOrderanKeLokal();
         }
 
         function mesinWaktuTerpusat() {
-            let adaPerubahan = false;
-            daftarOrderan.forEach(item => {
-                if (item.status === "pending") {
-                    item.waktuTunggu += 1; 
-                    if (item.sisaValid > 0) item.sisaValid -= 1; 
-                    if (item.cooldownBatal > 0) item.cooldownBatal -= 1; 
-                    adaPerubahan = true;
-                }
-            });
-            if (adaPerubahan) renderUILayout();
+            let adaPending = daftarOrderan.some(item => item.status === "pending");
+            // Selama ada orderan yang berjalan, UI akan di-refresh visual detiknya setiap 1 detik
+            if (adaPending) renderUILayout();
         }
 
         async function mesinCekSmsTerpusat() {
@@ -304,11 +331,13 @@
                         item.status = "received";
                         item.otp = data.otp;
                         renderUILayout();
+                        simpanDaftarOrderanKeLokal();
                         printLog(`[SMS] Nomor ${item.phone} menerima OTP!`);
                         setTimeout(ambilSaldoLive, 2000);
-                    } else if (data.status === "cancelled" || data.status === "expired" || item.sisaValid <= 0) {
+                    } else if (data.status === "cancelled" || data.status === "expired") {
                         item.status = "cancelled";
                         renderUILayout();
+                        simpanDaftarOrderanKeLokal();
                         setTimeout(ambilSaldoLive, 2000);
                     }
                 } catch (e) {}
@@ -319,8 +348,17 @@
             const item = daftarOrderan[index];
             item.status = "cancelled";
             renderUILayout();
+            simpanDaftarOrderanKeLokal();
             printLog(`Nomor ${item.phone} dibatalkan.`);
             setTimeout(ambilSaldoLive, 2000);
+        }
+
+        function hapusRiwayatSelesai() {
+            // Hanya sisakan pesanan yang statusnya masih aktif berjalan (pending)
+            daftarOrderan = daftarOrderan.filter(item => item.status === "pending");
+            renderUILayout();
+            simpanDaftarOrderanKeLokal();
+            printLog("Riwayat nomor selesai telah dibersihkan.");
         }
 
         function salinNomor(num) {
