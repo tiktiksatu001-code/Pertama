@@ -108,7 +108,7 @@
 
     <script>
         let daftarOrderan = []; 
-        let saldoSekarangGlobal = 0; // Menyimpan nominal angka saldo aktif secara global
+        let saldoSekarangGlobal = 0;
 
         document.addEventListener("DOMContentLoaded", function() {
             muatMenuLayananManual();
@@ -132,31 +132,20 @@
             ambilSaldoLive();
         }
 
-        // FUNGSI TARIK SALDO REAL-TIME (DENGAN CODES ANTI-CACHE DATA BASI)
         async function ambilSaldoLive() {
             const apiKey = localStorage.getItem("otp_key_reseller");
             if (!apiKey) return;
 
-            // Memasang query waktu unik (?t=...) agar proxy dipaksa selalu meminta data ter-gres dari pusat
             const URL_BAL = "https://corsproxy.io/?https://otpinstan.com/api/reseller/balance.php?t=" + Date.now();
 
             try {
-                const response = await fetch(URL_BAL, {
-                    method: "GET",
-                    headers: { "X-Api-Key": apiKey }
-                });
-                
+                const response = await fetch(URL_BAL, { method: "GET", headers: { "X-Api-Key": apiKey } });
                 const teksResponMurni = await response.text();
                 const data = JSON.parse(teksResponMurni);
-
                 let nominalSaldo = data.balance || data.saldo || data.balance_reseller || (data.data ? data.data.balance : 0) || 0;
-                
-                // Simpan angka asli dari server ke memori global aplikasi
                 saldoSekarangGlobal = parseInt(nominalSaldo);
-                
                 document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
             } catch (error) {
-                // Jika balance.php buntu, lakukan bypass lewat profile.php
                 ambilSaldoJalurDua(apiKey);
             }
         }
@@ -173,7 +162,6 @@
         }
 
         function muatMenuLayananManual() {
-            // Ditambahkan parameter data-harga untuk memotong saldo di layar secara instan
             document.getElementById("selectLayananLive").innerHTML = `
                 <option value="21" data-nama="Shopee" data-harga="340">Server 1 · Shopee - Rp 340</option>
                 <option value="1" data-nama="WhatsApp" data-harga="1400">Server 1 · WhatsApp - Rp 1.400</option>
@@ -192,7 +180,9 @@
             if(!apiKey) { alert("Simpan API Key dahulu!"); return; }
 
             printLog(`Meminta nomor baru untuk ${namaLayanan}...`);
-            const URL_ORDER = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php";
+            
+            // 🔥 PERBAIKAN: Ditambahkan "?t=" agar sistem anti-cache aktif saat meminta nomor baru
+            const URL_ORDER = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php?t=" + Date.now();
 
             try {
                 const response = await fetch(URL_ORDER, {
@@ -204,7 +194,6 @@
 
                 if (data.order_id || data.phone) {
                     
-                    // 🔥 1. POTONG SALDO DI LAYAR SECARA INSTAN (OPTIMISTIC UI)
                     saldoSekarangGlobal -= hargaLayanan;
                     if(saldoSekarangGlobal < 0) saldoSekarangGlobal = 0;
                     document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
@@ -224,10 +213,9 @@
                     renderUILayout();                 
                     printLog(`Sukses mendapat nomor ${data.phone}`);
                     
-                    // ⏱️ Beri jeda 3 detik baru tarik data saldo asli server agar database server selesai update
                     setTimeout(ambilSaldoLive, 3000);
                 } else {
-                    alert(`Gagal: ${data.message || 'Cek saldo Anda'}`);
+                    alert(`Gagal: ${data.message || 'Stok nomor kosong / Cek saldo'}`);
                 }
             } catch (error) {
                 printLog("Error koneksi/CORS: " + error.message);
