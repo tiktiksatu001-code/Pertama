@@ -49,19 +49,56 @@
         .note-display-wrapper { flex: 1; font-size: 14px; padding: 6px 0; word-break: break-all; }
         .text-before-pipe { color: #ffffff; font-weight: 500; }
         .text-after-pipe { color: #6e678a; font-style: italic; }
+
+        /* === CSS MODIFIKASI TOMBOL KOTAK KECIL === */
+        .pemicu-menu-utama {
+            background: #1a1535;
+            border: 1px solid #5f27cd;
+            border-radius: 0px; /* Sudut siku (kotak) */
+            padding: 8px 14px; /* Ukuran kompak & kecil */
+            display: inline-flex; /* Agar lebarnya hanya seukuran teks */
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            color: #fff;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .pemicu-menu-utama:hover {
+            background: #251e4a;
+            border-color: #00ffcc;
+            box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
+        }
+
+        #panahMenuUtama {
+            transition: transform 0.2s ease;
+            font-size: 11px;
+        }
+
+        #wadahOTP {
+            display: none; 
+            margin-top: 10px; 
+            width: 100%; 
+            border-radius: 0px; 
+            border: 1px solid #3d3463; 
+            background: #121324;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
 
-<!-- === PASTE DI BAWAH CONTAINER UTAMA GENERATOR === -->
-<div id="container-otp-tambahan" style="margin-top: 30px; padding: 0 20px;">
-    
-    <div class="pemicu-menu-utama" onclick="bukaPanelOTP()" style="cursor: pointer;">
+<!-- === PANEL OTP (TOMBOL KOTAK KECIL DI ATAS GENERATOR) === -->
+<div id="container-otp-tambahan" style="margin-bottom: 15px; width: 100%; max-width: 420px; text-align: left;">
+    <div class="pemicu-menu-utama" onclick="bukaPanelOTP()">
         <span>🛠️ Server 1 (Shopee Only Panel)</span>
         <span id="panahMenuUtama">▼</span>
     </div>
 
-    <div id="wadahOTP" style="display: none; margin-top: 15px; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid #2c2e5c; background: #121324;">
+    <div id="wadahOTP">
         <iframe src="kirim_otp.html" width="100%" height="750px" style="border: none; display: block;"></iframe>
     </div>
 
@@ -81,7 +118,6 @@
 </div>
 <!-- === SELESAI === -->
 
-    
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator</div>
         <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
@@ -158,7 +194,7 @@
         const DEFAULT_REPO = "bgszp.github.io";
 
         document.addEventListener("DOMContentLoaded", function() {
-    fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
+            fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
 
             if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = DEFAULT_USER;
             else document.getElementById("gitUser").value = localStorage.getItem("git_user");
@@ -415,8 +451,5 @@
         function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => { t.classList.remove('show'); }, 2000); }
     </script>
-
-
-    
 </body>
 </html>
