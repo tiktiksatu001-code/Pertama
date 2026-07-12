@@ -74,7 +74,8 @@
             border-radius: 12px; font-weight: bold; font-size: 15px; cursor: pointer;
             text-transform: uppercase; margin-top: 15px; box-shadow: 0 4px 12px rgba(95, 39, 205, 0.4);
         }
-        .btn-pesan-premium:hover { background: var(--accent-purple); }
+        .btn-pesan-premium:hover:not(:disabled) { background: var(--accent-purple); }
+        .btn-pesan-premium:disabled { background: #44475a !important; color: #888 !important; cursor: not-allowed !important; box-shadow: none !important; }
         
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-top: 15px; }
         .btn-batal {
@@ -172,7 +173,7 @@
                 </div>
             </div>
             
-            <button onclick="prosesPesanSekarang()" class="btn-pesan-premium">
+            <button onclick="prosesPesanSekarang()" class="btn-pesan-premium" id="btnPesanUtama">
                 <i class="fa-solid fa-cart-shopping" style="margin-right:5px;"></i> Pesan Sekarang
             </button>
         </div>
@@ -231,10 +232,18 @@
         let currentFileSha = ""; 
         let rawNotesLines = [];
 
-        // UPDATE v6: Smart Proxy dengan dukungan POST (Form-Urlencoded) & Try Direct Fetch
+        // UPDATE v7: Mencegah Efek Samping CORS & Double Order pada transaksi
         async function fetchSmartProxy(targetUrl, isPost = false, postBody = null) {
-            // Jalur 1: Tanpa Proxy (Direct), Jalur 2: CorsProxy, Jalur 3: CodeTabs (Suport POST)
-            const proxies = [
+            // Cek apakah ini perintah transaksi yang merubah saldo (order/cancel)
+            const isStateChanging = targetUrl.includes("order.php") || targetUrl.includes("cancel.php");
+            
+            // JIKA ini transaksi order/cancel, LANGSUNG gunakan Proxy!
+            // Jangan coba jalur Direct (""), karena jika browser memblokir CORS,
+            // proxy akan mengirim order ke-2 kali dan memotong saldo Anda lagi!
+            const proxies = isStateChanging ? [
+                "https://corsproxy.io/?",
+                "https://api.codetabs.com/v1/proxy?quest="
+            ] : [
                 "", 
                 "https://corsproxy.io/?",
                 "https://api.codetabs.com/v1/proxy?quest="
@@ -242,7 +251,6 @@
 
             let options = { method: isPost ? "POST" : "GET" };
             
-            // Format Form-Urlencoded sangat disukai oleh PHP $_POST
             if (isPost && postBody) {
                 options.headers = { "Content-Type": "application/x-www-form-urlencoded" };
                 options.body = new URLSearchParams(postBody).toString();
@@ -263,7 +271,7 @@
                     console.log("Jalur gagal:", proxy || "Direct", e.message);
                 }
             }
-            throw new Error("Semua jalur proxy gagal merespon.");
+            throw new Error("Semua jalur koneksi merespon gagal/timeout.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -326,13 +334,10 @@
         async function ambilSaldoLive() {
             const key = localStorage.getItem("otp_key_reseller"); if (!key) return;
             try {
-                // DIPERBAIKI: Saldo adalah Shared Endpoint (tanpa /s1/)
                 const d = await fetchSmartProxy(`https://otpinstan.com/api/reseller/balance.php?api_key=${key}&t=${Date.now()}`);
                 saldoSekarangGlobal = parseInt(d.balance || d.saldo || d.balance_reseller || 0);
                 document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
-            } catch(e) {
-                console.log("Gagal ambil saldo");
-            }
+            } catch(e) {}
         }
 
         async function ambilLayananLive() {
@@ -406,9 +411,14 @@
             if(!idLayananTerpilih) { alert("Pilih layanan terlebih dahulu!"); return; }
             if(!apiKey) { toggleApiKeyDropdown(); return; }
 
+            // PENGAMAN: Kunci tombol agar tidak bisa diklik 2 kali selama proses request!
+            const btn = document.getElementById("btnPesanUtama");
+            const teksAsli = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px;"></i> Memproses Order...`;
+
             printLog(`Meminta nomor untuk ${namaLayananTerpilih}...`);
             try {
-                // DIPERBAIKI: Mengirim parameter api_key juga via URL & body agar dijamin masuk
                 const data = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/order.php?api_key=${apiKey}`, true, {
                     api_key: apiKey,
                     product_id: idLayananTerpilih,
@@ -428,12 +438,19 @@
                     });
                     renderUILayout(); simpanDaftarOrderanKeLokal();
                     printLog(`Nomor ${nomer} didapatkan!`);
-                    ambilSaldoLive(); // Refresh saldo otomatis setelah beli
+                    ambilSaldoLive();
                 } else { 
                     alert(`Gagal: ${data.message || data.msg || 'Stok habis / server sibuk'}`); 
                     printLog(`Gagal: ${data.message || 'Error server'}`);
                 }
-            } catch (e) { printLog("Order Error: " + e.message); }
+            } catch (e) { 
+                printLog("Order Error: " + e.message); 
+                alert("Gagal memproses pesanan: " + e.message);
+            } finally {
+                // Buka kembali kunci tombol setelah proses selesai
+                btn.disabled = false;
+                btn.innerHTML = teksAsli;
+            }
         }
 
         async function eksekusiBatalkanServer(index) {
