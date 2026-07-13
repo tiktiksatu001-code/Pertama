@@ -113,7 +113,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1 (Shopee Only Panel)</h3>
-                <span class="badge-promo">Turbo OTP 2s</span>
+                <span class="badge-promo">Turbo OTP + PopUp</span>
             </div>
             
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: var(--accent-green);">
@@ -171,7 +171,7 @@
             </div>
         </div>
 
-        <!-- MENU BARU: DROPDOWN HISTORY ORDERAN DI BAWAH -->
+        <!-- MENU DROPDOWN HISTORY ORDERAN -->
         <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
             <div class="pemicu-dropdown" id="btnTriggerHistory" onclick="toggleHistoryDropdown()" style="padding: 12px 16px; border-radius: 10px; font-size: 13px; color: #b4b7ff;">
                 <span>📜 History Orderan Tersimpan <span id="badgeCountHistory" style="background:#3c1e70; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; margin-left:5px;">0</span></span>
@@ -190,7 +190,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 11px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
-            └> System Ready (Turbo 2s Active).
+            └> System Ready (Turbo + PopUp Active).
         </div>
     </div>
     
@@ -258,10 +258,7 @@
             if (histLokal) { riwayatOrderan = JSON.parse(histLokal); renderHistoryLayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            
-            // PERCEPAT CEK OTP: Dari 4000ms (4 detik) menjadi 2000ms (2 detik)!
-            setInterval(mesinCekSmsTerpusat, 2000);
-            
+            setInterval(mesinCekSmsTerpusat, 2000); // Interval cek OTP tetap agresif (2 detik)
             setInterval(ambilLayananLive, 8000); 
         });
 
@@ -273,6 +270,7 @@
             } else { w.style.display = "none"; p.style.transform = "rotate(0deg)"; }
         }
 
+        /* [Fungsi-fungsi manajemen API & Dropdown dipertahankan] */
         function simpanKeyV5() {
             const key = document.getElementById("otpKeyV5").value.trim();
             if(!key) { alert("Masukkan API Key!"); return; }
@@ -454,14 +452,15 @@
                     refreshSemuaDataLive();
                 } else {
                     printLog(`❌ Gagal Batal: ${res.msg || res.message || 'Ditolak server'}`);
-                    alert(`⚠️ Server OTPInstan menolak pembatalan:\n\n"${res.msg || res.message || 'Pesanan tidak dapat dibatalkan saat ini.'}"\n\n(Kemungkinan masa cooldown dari server pusat belum tercapai atau status order berubah)`);
+                    alert(`⚠️ Server OTPInstan menolak pembatalan:\n\n"${res.msg || res.message || 'Pesanan tidak dapat dibatalkan saat ini.'}"`);
                 }
             } catch (e) {
                 printLog("Error koneksi saat batal: " + e.message);
-                alert("⚠️ Gagal terhubung ke server OTPInstan untuk membatalkan pesanan.\nPeriksa koneksi internet Anda atau coba lagi beberapa saat.");
+                alert("⚠️ Gagal terhubung ke server OTPInstan untuk membatalkan pesanan.");
             }
         }
 
+        // ==================== FITUR BARU: TURBO CHECKER + POPUP ALERT ====================
         async function mesinCekSmsTerpusat() {
             const k = localStorage.getItem("otp_key_reseller"); if (!k) return;
             daftarOrderan.forEach(async (i) => {
@@ -469,10 +468,20 @@
                 try {
                     const d = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/check.php?order_id=${i.order_id}&api_key=${k}&t=${Date.now()}`);
                     if (d.status === "received" || d.otp || d.sms) {
-                        i.status = "received"; i.otp = d.otp || d.sms; putarSuaraNotif(); 
-                        renderUILayout(); simpanDaftarOrderanKeLokal();
+                        i.status = "received"; 
+                        i.otp = d.otp || d.sms; 
+                        
+                        putarSuaraNotif(); 
+                        renderUILayout(); 
+                        simpanDaftarOrderanKeLokal();
                         updateHistoryLog(i);
                         printLog(`🎉 OTP MASUK (${i.otp}) untuk nomor ${i.phone}!`);
+                        
+                        // EFEK POP UP PEMBERITAHUAN (ALERT) INSTAN SAAT OTP MASUK
+                        setTimeout(() => {
+                            alert(`🎉 OTP MASUK!\n\nNomor: ${i.phone}\nKode OTP: ${i.otp}`);
+                        }, 100);
+
                     } else if (d.status === "cancelled" || d.status === "expired") {
                         i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal();
                         updateHistoryLog(i);
@@ -547,7 +556,6 @@
             renderHistoryLayout();
         }
 
-        // RENDER UI HISTORY DENGAN TAMBAHAN KETERANGAN HARGA
         function renderHistoryLayout() {
             const container = document.getElementById("listHistoryRender");
             document.getElementById("badgeCountHistory").innerText = riwayatOrderan.length;
@@ -575,7 +583,6 @@
                     </div>`;
                 }
 
-                // FORMAT HARGA UNTUK DITAMPILKAN DI HISTORY
                 let hargaTampil = item.harga ? `Rp ${parseInt(item.harga).toLocaleString('id-ID')}` : '-';
 
                 html += `
