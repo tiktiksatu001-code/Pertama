@@ -80,7 +80,6 @@
         
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-top: 15px; }
         
-        /* DESAIN KOTAK DATA & TOMBOL COPY YANG STATIS (TIDAK BERUBAH POSISI) */
         .box-copy-statik {
             display: flex; justify-content: space-between; align-items: center;
             background: #131428; padding: 10px 12px; border-radius: 8px;
@@ -114,7 +113,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1 (Shopee Only Panel)</h3>
-                <span class="badge-promo">Live Dynamic</span>
+                <span class="badge-promo">Turbo OTP 2s</span>
             </div>
             
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: var(--accent-green);">
@@ -191,7 +190,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 11px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
-            └> System Ready.
+            └> System Ready (Turbo 2s Active).
         </div>
     </div>
     
@@ -259,7 +258,10 @@
             if (histLokal) { riwayatOrderan = JSON.parse(histLokal); renderHistoryLayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 4000);
+            
+            // PERCEPAT CEK OTP: Dari 4000ms (4 detik) menjadi 2000ms (2 detik)!
+            setInterval(mesinCekSmsTerpusat, 2000);
+            
             setInterval(ambilLayananLive, 8000); 
         });
 
@@ -414,7 +416,7 @@
                     renderUILayout(); simpanDaftarOrderanKeLokal();
                     updateHistoryLog(orderBaru);
 
-                    printLog(`Nomor ${nomer} didapatkan!`);
+                    printLog(`Nomor ${nomer} didapatkan! Cek OTP setiap 2 detik...`);
                     ambilSaldoLive();
                 } else { 
                     alert(`Gagal: ${data.message || data.msg || 'Stok habis / server sibuk'}`); 
@@ -470,7 +472,7 @@
                         i.status = "received"; i.otp = d.otp || d.sms; putarSuaraNotif(); 
                         renderUILayout(); simpanDaftarOrderanKeLokal();
                         updateHistoryLog(i);
-                        printLog(`🎉 OTP masuk untuk nomor ${i.phone}!`);
+                        printLog(`🎉 OTP MASUK (${i.otp}) untuk nomor ${i.phone}!`);
                     } else if (d.status === "cancelled" || d.status === "expired") {
                         i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal();
                         updateHistoryLog(i);
@@ -479,7 +481,6 @@
             });
         }
 
-        // RENDER UI PESANAN AKTIF DENGAN TOMBOL COPY STATIK
         function renderUILayout() {
             const container = document.getElementById("containerListOrder");
             if (daftarOrderan.length === 0) { container.innerHTML = `<div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">Belum ada pesanan aktif. Klik pesan di atas.</div>`; return; }
@@ -493,13 +494,12 @@
                 let sisa = Math.max(0, 1200 - sec); 
                 let cool = Math.max(0, 120 - sec);
                 
-                let textStat = `🔄 Menunggu SMS... (${sec}s)`; let colStat = "#ffb86c";
+                let textStat = `⚡ Cek OTP tiap 2s... (${sec}s)`; let colStat = "#ffb86c";
                 let kotakOtp = "";
 
                 if (item.status === "received") { 
                     textStat = `🎉 SMS/OTP Diterima!`; 
                     colStat = "#50fa7b"; 
-                    // Kotak khusus OTP yang tombol copynya terkunci di kanan
                     kotakOtp = `
                         <div class="box-copy-statik otp-masuk">
                             <div>
@@ -514,11 +514,10 @@
                 html += `
                     <div class="card-order">
                         <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa; margin-bottom:6px;">
-                            <span>Server 1 · ${item.layanan}</span>
+                            <span>Server 1 · ${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span>
                             <span>⏱️ Expired: ${Math.floor(sisa/60)}m ${sisa%60}s</span>
                         </div>
                         
-                        <!-- KOTAK NOMOR HP DENGAN TOMBOL COPY TERKUNCI DI KANAN -->
                         <div class="box-copy-statik">
                             <div>
                                 <div style="font-size:10px; color:#8b8da9; text-transform:uppercase;">Nomor Handphone:</div>
@@ -548,7 +547,7 @@
             renderHistoryLayout();
         }
 
-        // RENDER UI HISTORY DENGAN TOMBOL COPY STATIK
+        // RENDER UI HISTORY DENGAN TAMBAHAN KETERANGAN HARGA
         function renderHistoryLayout() {
             const container = document.getElementById("listHistoryRender");
             document.getElementById("badgeCountHistory").innerText = riwayatOrderan.length;
@@ -576,14 +575,21 @@
                     </div>`;
                 }
 
+                // FORMAT HARGA UNTUK DITAMPILKAN DI HISTORY
+                let hargaTampil = item.harga ? `Rp ${parseInt(item.harga).toLocaleString('id-ID')}` : '-';
+
                 html += `
                     <div style="background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px;">
-                        <div style="display: flex; justify-content: space-between; color: #8b8da9; font-size: 11px; margin-bottom: 6px;">
-                            <span>📱 ${item.layanan} (${item.waktu_string || ''})</span>
-                            ${badgeStatus}
+                        <div style="display: flex; justify-content: space-between; align-items: center; color: #8b8da9; font-size: 11px; margin-bottom: 6px;">
+                            <div>
+                                <span style="color:#fff; font-weight:600;">📱 ${item.layanan}</span>
+                                <span style="color:#00ffcc; font-weight:bold; margin-left:4px;">(${hargaTampil})</span>
+                            </div>
+                            <div>
+                                <span>${item.waktu_string || ''}</span> • ${badgeStatus}
+                            </div>
                         </div>
                         
-                        <!-- BARIS NOMOR HP HISTORY -->
                         <div style="display: flex; justify-content: space-between; align-items: center; background: #181933; padding: 6px 10px; border-radius: 6px;">
                             <span style="font-size: 14px; font-weight: bold; color: #fff;">${item.phone}</span>
                             <button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static" style="padding: 4px 8px; font-size: 11px;"><i class="fa-regular fa-copy"></i> Salin No</button>
