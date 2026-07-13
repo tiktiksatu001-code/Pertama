@@ -79,6 +79,23 @@
         .btn-pesan-premium:disabled { background: #44475a !important; color: #888 !important; cursor: not-allowed !important; box-shadow: none !important; }
         
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-top: 15px; }
+        
+        /* DESAIN KOTAK DATA & TOMBOL COPY YANG STATIS (TIDAK BERUBAH POSISI) */
+        .box-copy-statik {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #131428; padding: 10px 12px; border-radius: 8px;
+            border: 1px solid #222448; margin: 8px 0;
+        }
+        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
+        .btn-copy-static {
+            background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan);
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+            font-weight: bold; display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+        }
+        .btn-copy-static:hover { background: #323568; transform: scale(1.03); }
+        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
+        .btn-copy-static.btn-green:hover { background: #265340; }
+        
         .btn-batal {
             background: var(--accent-red); color: white; border: none; padding: 10px 12px;
             border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 12px; display: flex; justify-content: center; align-items: center; gap: 6px;
@@ -167,7 +184,7 @@
                     <span style="font-size: 11px; color: var(--text-sub);">Maksimal 50 riwayat terbaru</span>
                     <span onclick="bersihkanSemuaHistory()" style="cursor: pointer; font-size: 11px; color: var(--accent-red); font-weight: bold;">🗑️ Hapus History</span>
                 </div>
-                <div id="listHistoryRender" style="max-height: 260px; overflow-y: auto; padding: 10px;">
+                <div id="listHistoryRender" style="max-height: 280px; overflow-y: auto; padding: 10px;">
                     <div style="text-align: center; padding: 20px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada riwayat orderan tersimpan.</div>
                 </div>
             </div>
@@ -182,7 +199,7 @@
 
     <script>
         let daftarOrderan = []; 
-        let riwayatOrderan = []; // Array khusus menyimpan arsip history
+        let riwayatOrderan = []; 
         let saldoSekarangGlobal = 0;
         let globalListLayanan = []; 
         let idLayananTerpilih = null;
@@ -238,7 +255,6 @@
             const orderanLokal = localStorage.getItem("daftar_orderan_live");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
-            // Memuat Arsip History dari localStorage
             const histLokal = localStorage.getItem("riwayat_order_reseller");
             if (histLokal) { riwayatOrderan = JSON.parse(histLokal); renderHistoryLayout(); }
 
@@ -275,7 +291,6 @@
             }
         }
 
-        // FUNGSI TOGGLE DROPDOWN HISTORY ORDERAN
         function toggleHistoryDropdown() {
             const box = document.getElementById("wadahHistoryDropdown");
             const panah = document.getElementById("panahHistory");
@@ -397,8 +412,6 @@
 
                     daftarOrderan.unshift(orderBaru);
                     renderUILayout(); simpanDaftarOrderanKeLokal();
-                    
-                    // Update ke arsip History permanen
                     updateHistoryLog(orderBaru);
 
                     printLog(`Nomor ${nomer} didapatkan!`);
@@ -435,10 +448,7 @@
                     showToast("Pesanan Berhasil Dibatalkan! ✨");
                     renderUILayout(); 
                     simpanDaftarOrderanKeLokal();
-                    
-                    // Update status pembatalan di history
                     updateHistoryLog(item);
-                    
                     refreshSemuaDataLive();
                 } else {
                     printLog(`❌ Gagal Batal: ${res.msg || res.message || 'Ditolak server'}`);
@@ -459,10 +469,7 @@
                     if (d.status === "received" || d.otp || d.sms) {
                         i.status = "received"; i.otp = d.otp || d.sms; putarSuaraNotif(); 
                         renderUILayout(); simpanDaftarOrderanKeLokal();
-                        
-                        // Update status sukses di history
                         updateHistoryLog(i);
-                        
                         printLog(`🎉 OTP masuk untuk nomor ${i.phone}!`);
                     } else if (d.status === "cancelled" || d.status === "expired") {
                         i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal();
@@ -472,6 +479,7 @@
             });
         }
 
+        // RENDER UI PESANAN AKTIF DENGAN TOMBOL COPY STATIK
         function renderUILayout() {
             const container = document.getElementById("containerListOrder");
             if (daftarOrderan.length === 0) { container.innerHTML = `<div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">Belum ada pesanan aktif. Klik pesan di atas.</div>`; return; }
@@ -486,21 +494,48 @@
                 let cool = Math.max(0, 120 - sec);
                 
                 let textStat = `🔄 Menunggu SMS... (${sec}s)`; let colStat = "#ffb86c";
-                if (item.status === "received") { textStat = `🎉 OTP: <span style="background:#50fa7b; color:#000; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:16px;">${item.otp}</span> <span onclick="salinTeksToast('${item.otp}')" style="cursor:pointer; font-size:15px; color:#50fa7b; margin-left:8px;">📝</span>`; colStat = "#50fa7b"; } 
+                let kotakOtp = "";
+
+                if (item.status === "received") { 
+                    textStat = `🎉 SMS/OTP Diterima!`; 
+                    colStat = "#50fa7b"; 
+                    // Kotak khusus OTP yang tombol copynya terkunci di kanan
+                    kotakOtp = `
+                        <div class="box-copy-statik otp-masuk">
+                            <div>
+                                <div style="font-size:10px; color:#50fa7b; text-transform:uppercase; font-weight:bold;">Kode OTP Masuk:</div>
+                                <div style="font-size:22px; font-weight:bold; color:#50fa7b; letter-spacing:1px; margin-top:2px;">${item.otp}</div>
+                            </div>
+                            <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
+                        </div>`;
+                } 
                 else if (item.status === "cancelled") { textStat = "❌ Dibatalkan / Expired"; colStat = "#ff5555"; }
+                
                 html += `
                     <div class="card-order">
-                        <div style="font-size:11px; color:#aaa;">Server 1 · ${item.layanan}</div>
-                        <div style="font-size:20px; font-weight:bold; color:#fff; margin:5px 0;">${item.phone} <span onclick="salinTeksToast('${item.phone}')" style="cursor:pointer; font-size:14px; color:#00ffcc;">📋</span></div>
-                        <div style="font-size:13px; color:${colStat}; margin-top:5px;">${textStat}</div>
-                        <div style="font-size:11px; color:#ffb86c; margin-top:5px;">⏱️ Expired: ${Math.floor(sisa/60)}m ${sisa%60}s</div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa; margin-bottom:6px;">
+                            <span>Server 1 · ${item.layanan}</span>
+                            <span>⏱️ Expired: ${Math.floor(sisa/60)}m ${sisa%60}s</span>
+                        </div>
+                        
+                        <!-- KOTAK NOMOR HP DENGAN TOMBOL COPY TERKUNCI DI KANAN -->
+                        <div class="box-copy-statik">
+                            <div>
+                                <div style="font-size:10px; color:#8b8da9; text-transform:uppercase;">Nomor Handphone:</div>
+                                <div style="font-size:18px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div>
+                            </div>
+                            <button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button>
+                        </div>
+
+                        ${kotakOtp}
+
+                        <div style="font-size:12px; font-weight:600; color:${colStat}; margin-top:8px;">${textStat}</div>
                         ${item.status === "pending" ? `<button class="btn-batal" ${cool>0?'disabled':''} onclick="eksekusiBatalkanServer(${index})">${cool>0?`Batalkan (Tunggu ${cool}s)`:'❌ Batalkan Pesanan'}</button>` : ''}
                     </div>`;
             });
             container.innerHTML = html; if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
 
-        // FUNGSI ARSIP HISTORY ORDERAN
         function updateHistoryLog(item) {
             let idx = riwayatOrderan.findIndex(x => x.order_id === item.order_id);
             if (idx !== -1) {
@@ -508,11 +543,12 @@
             } else {
                 riwayatOrderan.unshift({ ...item });
             }
-            if (riwayatOrderan.length > 50) riwayatOrderan = riwayatOrderan.slice(0, 50); // Maksimal simpan 50 log
+            if (riwayatOrderan.length > 50) riwayatOrderan = riwayatOrderan.slice(0, 50); 
             localStorage.setItem("riwayat_order_reseller", JSON.stringify(riwayatOrderan));
             renderHistoryLayout();
         }
 
+        // RENDER UI HISTORY DENGAN TOMBOL COPY STATIK
         function renderHistoryLayout() {
             const container = document.getElementById("listHistoryRender");
             document.getElementById("badgeCountHistory").innerText = riwayatOrderan.length;
@@ -530,22 +566,29 @@
                 
                 let barisOtp = "";
                 if (item.otp) {
-                    barisOtp = `<div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #2c2e5c; color: #50fa7b; font-size: 13px; font-weight: bold;">
-                        Kode OTP: <span style="background:#203a36; padding:2px 6px; border-radius:4px;">${item.otp}</span> 
-                        <span onclick="salinTeksToast('${item.otp}')" style="cursor:pointer; margin-left:4px;" title="Salin OTP">📝</span>
+                    barisOtp = `
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #2c2e5c; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="color: #8b8da9; font-size: 11px;">Kode OTP:</span>
+                            <span style="color: #50fa7b; font-size: 14px; font-weight: bold; margin-left: 4px; background:#1b322a; padding: 2px 6px; border-radius: 4px;">${item.otp}</span>
+                        </div>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green" style="padding: 4px 8px; font-size: 11px;"><i class="fa-regular fa-copy"></i> Salin OTP</button>
                     </div>`;
                 }
 
                 html += `
                     <div style="background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px;">
-                        <div style="display: flex; justify-content: space-between; color: #8b8da9; font-size: 11px; margin-bottom: 4px;">
-                            <span>📱 ${item.layanan}</span>
-                            <span>${item.waktu_string || ''}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 14px; font-weight: bold; color: #fff;">${item.phone} <span onclick="salinTeksToast('${item.phone}')" style="cursor:pointer; color:#00ffcc; margin-left:4px;" title="Salin Nomor">📋</span></span>
+                        <div style="display: flex; justify-content: space-between; color: #8b8da9; font-size: 11px; margin-bottom: 6px;">
+                            <span>📱 ${item.layanan} (${item.waktu_string || ''})</span>
                             ${badgeStatus}
                         </div>
+                        
+                        <!-- BARIS NOMOR HP HISTORY -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: #181933; padding: 6px 10px; border-radius: 6px;">
+                            <span style="font-size: 14px; font-weight: bold; color: #fff;">${item.phone}</span>
+                            <button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static" style="padding: 4px 8px; font-size: 11px;"><i class="fa-regular fa-copy"></i> Salin No</button>
+                        </div>
+
                         ${barisOtp}
                     </div>`;
             });
