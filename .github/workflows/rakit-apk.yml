@@ -33,7 +33,9 @@ jobs:
         cd direktori_apk
         
         cordova platform add android
+        
         cordova plugin add cordova-plugin-background-mode
+        cordova plugin add cordova-plugin-local-notification
         
         # Hapus file bawaan Cordova, ganti dengan file HTML/JS Anda dari GitHub
         rm -rf www/*
