@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Otomatis OTP - Shopee Only (v14)</title>
+    <title>Panel Otomatis OTP - Shopee Only (v15)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -108,12 +108,11 @@
 </head>
 <body>
 
-    <!-- KOTAK UTAMA: KHUSUS PANEL MULTI-OTP -->
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1 (Shopee Only Panel)</h3>
-                <span class="badge-promo">Push Notification v14</span>
+                <span class="badge-promo">Loud Alarm v15</span>
             </div>
             
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: var(--accent-green);">
@@ -160,7 +159,6 @@
             </button>
         </div>
 
-        <!-- BAGIAN PESANAN AKTIF -->
         <div style="margin-top: 25px; border-top: 2px dashed var(--border-color); padding-top: 15px;">
             <div style="font-size: 14px; font-weight: bold; color: var(--accent-green); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
@@ -171,7 +169,6 @@
             </div>
         </div>
 
-        <!-- MENU DROPDOWN HISTORY ORDERAN -->
         <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
             <div class="pemicu-dropdown" id="btnTriggerHistory" onclick="toggleHistoryDropdown()" style="padding: 12px 16px; border-radius: 10px; font-size: 13px; color: #b4b7ff;">
                 <span>📜 History Orderan Tersimpan <span id="badgeCountHistory" style="background:#3c1e70; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; margin-left:5px;">0</span></span>
@@ -190,7 +187,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 11px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
-            └> System Ready (Push Notification Enabled).
+            └> System Ready (Loud Alarm Mode Enabled).
         </div>
     </div>
     
@@ -241,13 +238,6 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            // MINTA IZIN NOTIFIKASI SISTEM SAAT HALAMAN DIBUKA
-            if ("Notification" in window) {
-                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                    Notification.requestPermission();
-                }
-            }
-
             const savedKey = localStorage.getItem("otp_key_reseller");
             if(savedKey) {
                 document.getElementById("otpKeyV5").value = savedKey;
@@ -435,6 +425,7 @@
             }
         }
 
+        // ==================== UPDATE v15: AUTO REFRESH SALDO SAAT BATAL ORDERAN ====================
         async function eksekusiBatalkanServer(index) {
             const apiKey = localStorage.getItem("otp_key_reseller"); if (!apiKey) return;
             const item = daftarOrderan[index];
@@ -455,10 +446,13 @@
                     renderUILayout(); 
                     simpanDaftarOrderanKeLokal();
                     updateHistoryLog(item);
-                    refreshSemuaDataLive();
+                    
+                    // AUTO REFRESH SALDO INSTAN SETELAH BATAL
+                    await ambilSaldoLive();
                 } else {
                     printLog(`❌ Gagal Batal: ${res.msg || res.message || 'Ditolak server'}`);
                     alert(`⚠️ Server OTPInstan menolak pembatalan:\n\n"${res.msg || res.message || 'Pesanan tidak dapat dibatalkan saat ini.'}"`);
+                    await ambilSaldoLive(); // Tetap lakukan refresh saldo sebagai backup
                 }
             } catch (e) {
                 printLog("Error koneksi saat batal: " + e.message);
@@ -466,7 +460,7 @@
             }
         }
 
-        // ==================== UPDATE v14: TURBO CHECKER + PUSH NOTIFICATION SYSTEM ====================
+        // ==================== UPDATE v15: TURBO CHECKER (TANPA POPUP & ALARM MAKSIMAL) ====================
         async function mesinCekSmsTerpusat() {
             const k = localStorage.getItem("otp_key_reseller"); if (!k) return;
             daftarOrderan.forEach(async (i) => {
@@ -477,29 +471,21 @@
                         i.status = "received"; 
                         i.otp = d.otp || d.sms; 
                         
-                        putarSuaraNotif(); 
+                        putarSuaraNotif(); // Putar Suara Alarm Keras Retro Arpeggio
                         renderUILayout(); 
                         simpanDaftarOrderanKeLokal();
                         updateHistoryLog(i);
                         printLog(`🎉 OTP MASUK (${i.otp}) untuk nomor ${i.phone}!`);
                         
-                        // 1. KIRIM NOTIFIKASI SISTEM (TEMBUS APLIKASI LAIN)
-                        if ("Notification" in window && Notification.permission === "granted") {
-                            new Notification("🎉 OTP MASUK! (Shopee Panel)", {
-                                body: `Nomor: ${i.phone}\nKode OTP: ${i.otp}`,
-                                icon: "https://cdn-icons-png.flaticon.com/512/1037/1037323.png",
-                                requireInteraction: true // Notifikasi tetap di layar sampai di-swipe/klik
-                            });
-                        }
-
-                        // 2. BACKUP POP-UP ALERT BIASA
-                        setTimeout(() => {
-                            alert(`🎉 OTP MASUK!\n\nNomor: ${i.phone}\nKode OTP: ${i.otp}`);
-                        }, 100);
-
+                        // POP-UP & PUSH NOTIFIKASI SUDAH DIHAPUS SEPENUHNYA SESUAI REQUEST
                     } else if (d.status === "cancelled" || d.status === "expired") {
-                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal();
+                        i.status = "cancelled"; 
+                        renderUILayout(); 
+                        simpanDaftarOrderanKeLokal();
                         updateHistoryLog(i);
+                        
+                        // AUTO REFRESH SALDO JIKA BATAL OTOMATIS OLEH EXPIRED SERVER
+                        ambilSaldoLive();
                     }
                 } catch (e) {}
             });
@@ -634,7 +620,47 @@
 
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_live", JSON.stringify(daftarOrderan)); }
-        function putarSuaraNotif() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); if (!ctx) return; const playTone = (freq, start, dur) => { const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, ctx.currentTime + start); gain.gain.setValueAtTime(0.3, ctx.currentTime + start); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur); osc.connect(gain); gain.connect(ctx.destination); osc.start(ctx.currentTime + start); osc.stop(ctx.currentTime + start + dur); }; playTone(587.33, 0, 0.3); playTone(880, 0.14, 0.4); } catch (e) {} }
+        
+        // ==================== UPDATE v15: MULTI-TONE RETRO ARPEGGIO ALARM (SUPER LOUD) ====================
+        function putarSuaraNotif() { 
+            try { 
+                const ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+                if (!ctx) return; 
+
+                const playTone = (freq, type, start, dur, volume = 0.8) => { 
+                    const osc = ctx.createOscillator(); 
+                    const gain = ctx.createGain(); 
+                    osc.type = type; 
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + start); 
+                    
+                    gain.gain.setValueAtTime(volume, ctx.currentTime + start); 
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur - 0.02); 
+                    
+                    osc.connect(gain); 
+                    gain.connect(ctx.destination); 
+                    osc.start(ctx.currentTime + start); 
+                    osc.stop(ctx.currentTime + start + dur); 
+                }; 
+
+                // Melodi "Retro Arpeggio Arcade" (Lantang, tajam, & futuristik)
+                let now = 0;
+                
+                // --- SIKLUS 1 ---
+                playTone(1046.50, 'triangle', now, 0.12, 0.9); // C6
+                playTone(1318.51, 'triangle', now + 0.10, 0.12, 0.9); // E6
+                playTone(1567.98, 'triangle', now + 0.20, 0.12, 0.9); // G6
+                playTone(2093.00, 'sine', now + 0.30, 0.50, 1.0); // C7 (Nyaring & Panjang)
+
+                // --- SIKLUS 2 (Pengulangan Alarm setelah jeda agar sangat disadari) ---
+                let jeda = 0.65;
+                playTone(1046.50, 'triangle', now + jeda, 0.12, 0.9);
+                playTone(1318.51, 'triangle', now + jeda + 0.10, 0.12, 0.9);
+                playTone(1567.98, 'triangle', now + jeda + 0.20, 0.12, 0.9);
+                playTone(2093.00, 'sine', now + jeda + 0.30, 0.60, 1.0);
+            } catch (e) {
+                console.log("Audio play failed: ", e);
+            } 
+        }
         
         function hapusRiwayatSelesai() { 
             daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); 
