@@ -22,7 +22,7 @@
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        /* === GAYA UI APLIKASI NATIVE (INDONESIA SHOPEE) === */
+        /* === GAYA UI APLIKASI NATIVE (INDONESIA) === */
         .app-ui-container { background: #ffffff; border-radius: 16px; padding: 12px; margin-top: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .app-header-nav { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px 15px 10px; border-bottom: 1px solid #f1f5f9; }
         .app-header-left { display: flex; align-items: center; gap: 15px; }
@@ -76,7 +76,7 @@
             </div>
         </div>
 
-        <!-- UI APLIKASI NATIVE (INDONESIA) -->
+        <!-- UI APLIKASI NATIVE -->
         <div class="app-ui-container">
             <div class="app-header-nav">
                 <div class="app-header-left">
@@ -86,7 +86,7 @@
                         <div style="font-size: 12px; color: #64748b;">Shopee · Select an operator</div>
                     </div>
                 </div>
-                <i class="fa-solid fa-rotate-right" onclick="muatKatalogShopeeID()" style="color: #3b82f6; font-size: 16px; cursor: pointer; padding: 5px;" title="Refresh Katalog"></i>
+                <i class="fa-solid fa-rotate-right" onclick="muatKatalogFlexible()" style="color: #3b82f6; font-size: 16px; cursor: pointer; padding: 5px;" title="Refresh Katalog"></i>
             </div>
             <div id="operatorAccordionContainer" style="margin-top: 10px;">
                 <div style="padding: 30px; text-align: center; color: #94a3b8;">
@@ -108,7 +108,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Shopee ID Filter Ready.
+            └> Flexible Catalog Ready.
         </div>
     </div>
     
@@ -181,19 +181,17 @@
             const orderanLokal = localStorage.getItem("daftar_orderan_srv2_shopee");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
-            if(savedKey) muatKatalogShopeeID();
+            if(savedKey) muatKatalogFlexible();
 
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* === TARIK KHUSUS SHOPEE INDONESIA (COUNTRY_ID = 7) === */
-        async function muatKatalogShopeeID() {
+        /* === TARIK KATALOG FLEKSIBEL (MENGUTAMAKAN INDONESIA, TANPA FILTER KETAT) === */
+        async function muatKatalogFlexible() {
             try {
-                printLog("🔄 Menarik produk Shopee Indonesia (ID 7)...");
+                printLog("🔄 Menarik katalog produk Indonesia (ID 7)...");
                 
-                // Berdasarkan dokumentasi, filter negara menggunakan ?country_id=7
-                // Kita juga menyertakan limit besar agar semua server muncul
                 const res = await apiSMSCode('catalog/products?country_id=7&limit=100', 'GET');
                 let arrData = res.data;
                 
@@ -201,17 +199,22 @@
                     throw new Error("Format data tidak valid.");
                 }
 
-                // Saring ketat khusus layanan Shopee di Indonesia
-                let shopeeID = arrData.filter(item => {
-                    let namaProd = (item.name || "").toLowerCase();
-                    return namaProd.includes("shopee");
+                // Coba saring yang mengandung kata shopee
+                let hasilFilter = arrData.filter(item => {
+                    let textCek = (item.name || "").toLowerCase();
+                    return textCek.includes("shopee");
                 });
 
-                printLog(`✅ Ditemukan ${shopeeID.length} server Shopee ID!`);
+                // Jika filter shopee kosong, ambil semua produk Indonesia agar aplikasi tidak kosong
+                if (hasilFilter.length === 0) {
+                    printLog("⚠️ Keyword 'shopee' tidak terdeteksi, menampilkan semua layanan Indonesia.");
+                    hasilFilter = arrData;
+                } else {
+                    printLog(`✅ Ditemukan ${hasilFilter.length} layanan.`);
+                }
 
                 let groupedOps = {};
-                shopeeID.forEach(item => {
-                    // Mendeteksi operator seperti Any, Telkomsel, Indosat, XL/Axis, dll.
+                hasilFilter.forEach(item => {
                     let opName = item.operator_name || item.operator || "Any";
                     if (!opName || opName.toLowerCase() === "any") opName = "Any";
                     
@@ -234,7 +237,6 @@
                     });
                 }
                 
-                // Urutkan agar "Any" berada di barisan paling atas
                 newKatalog.sort((a, b) => a.name === "Any" ? -1 : (b.name === "Any" ? 1 : 0));
                 dataKatalogLayanan = newKatalog;
                 renderMenuLayananApp(dataKatalogLayanan);
@@ -251,7 +253,7 @@
         function renderMenuLayananApp(katalogData) {
             const container = document.getElementById("operatorAccordionContainer");
             if(katalogData.length === 0) {
-                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #64748b; font-size: 13px;">Tidak ada layanan Shopee Indonesia ditemukan.</div>`;
+                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #64748b; font-size: 13px;">Tidak ada layanan ditemukan.</div>`;
                 return;
             }
 
@@ -374,7 +376,7 @@
             toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); muatKatalogShopeeID(); }
+        function refreshSemuaDataLive() { ambilSaldoLive(); muatKatalogFlexible(); }
 
         async function ambilSaldoLive() {
             try {
@@ -410,7 +412,7 @@
                         putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
                         renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
                     } else if (stat === "CANCELED" || stat === "CANCELLED" || stat === "EXPIRED" || stat === "REFUNDED") {
-                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
+                        i.status = "cancelled"; renderUILayout(); simpanDaffarOrderanKeLokal(); ambilSaldoLive();
                     }
                 } catch (e) {}
             });
