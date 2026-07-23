@@ -90,11 +90,10 @@
             <div id="operatorAccordionContainer" style="margin-top: 10px;">
                 <div style="padding: 30px; text-align: center; color: #94a3b8;">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #3b82f6;"></i>
-                    <div style="margin-top: 10px; font-size: 13px;">Memuat Server...</div>
+                    <div style="margin-top: 10px; font-size: 13px;">Auto-Discovering Server...</div>
                 </div>
             </div>
         </div>
-        <!-- ========================================= -->
 
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
@@ -106,8 +105,8 @@
             </div>
         </div>
 
-        <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
-            └> Sistem siap (Live API Mode).
+        <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
+            └> Sistem siap (Smart API Mode).
         </div>
     </div>
     
@@ -117,12 +116,15 @@
         let daftarOrderan = []; 
         let dataKatalogLayanan = [];
 
-        // Fallback jika kuota proxy habis atau server sedang down
+        // Fallback statis jika server API benar-benar bermasalah
         const fallbackKatalog = [
             { id: "any", name: "Any", servers: [{ id: 87, name: "Server 1", stock: 886, price: 197 }, { id: 88, name: "Server 2", stock: 420, price: 276 }]},
             { id: "axis", name: "AXIS (XL Axiata)", servers: [{ id: 94, name: "Server 1", stock: 8190, price: 537 }] }
         ];
 
+        /* =======================================================================
+           FUNGSI API INTI (SUDAH DIPERBAIKI LOGIKA ERROR-NYA)
+           ======================================================================= */
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
@@ -134,21 +136,19 @@
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            // PERBAIKAN: Menggunakan array proxy yang kuat untuk GET requests
             const proxies = [ 
-                "", // Direct API
-                "https://api.codetabs.com/v1/proxy?quest=", // Sangat stabil, anti CORS
-                "https://corsproxy.io/?",
-                "https://thingproxy.freeboard.io/fetch/"
+                { url: "", encode: false }, // Direct (Langsung tanpa proxy)
+                { url: "https://corsproxy.io/?", encode: true },
+                { url: "https://api.allorigins.win/raw?url=", encode: true }
             ];
-            let lastError = null;
+
+            let networkError = null;
 
             for (let proxy of proxies) {
                 try {
                     let proxyUrl = targetUrl;
-                    if (proxy !== "") { 
-                        // PERBAIKAN: Hindari encodeURIComponent ganda agar parameter URL tetap utuh
-                        proxyUrl = proxy + targetUrl; 
+                    if (proxy.url !== "") { 
+                        proxyUrl = proxy.encode ? proxy.url + encodeURIComponent(targetUrl) : proxy.url + targetUrl; 
                     }
                     
                     const res = await fetch(proxyUrl, options);
@@ -156,13 +156,28 @@
                     
                     let data = {};
                     if (textResponse && textResponse.trim() !== "") {
-                        try { data = JSON.parse(textResponse); } catch (err) { throw new Error("Bukan JSON."); }
+                        try { data = JSON.parse(textResponse); } catch (err) {}
                     }
-                    if (!res.ok) throw new Error(data.error?.message || data.message || `HTTP ${res.status}`);
+                    
+                    if (!res.ok) {
+                        // JIKA STATUS BUKAN 200, INI BERARTI KONEKSI SUKSES, TAPI SERVER API MENOLAK.
+                        // Langsung lemparkan error aslinya (misal HTTP 404, HTTP 405), jangan loop proxy lagi!
+                        let msg = data.error?.message || data.message || `Endpoint salah / Ditolak`;
+                        throw new Error(`[HTTP ${res.status}] ${msg}`);
+                    }
+                    
                     return data; 
-                } catch (e) { lastError = e; }
+
+                } catch (e) { 
+                    // Jika errornya dari server API ([HTTP XXX]), hentikan loop proxy!
+                    if (e.message.includes("[HTTP")) {
+                        throw e; 
+                    }
+                    // Jika Failed to fetch (masalah jaringan/CORS), simpan dan coba proxy berikutnya
+                    networkError = e; 
+                }
             }
-            throw new Error(lastError ? lastError.message : "Gagal koneksi proxy.");
+            throw new Error(networkError ? networkError.message : "Gagal koneksi proxy.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -184,63 +199,76 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* === FUNGSI SINKRONISASI KATALOG LIVE DARI SERVER === */
+        /* =======================================================================
+           FUNGSI "AUTO-DISCOVER" KATALOG (Cari endpoint yang benar secara otomatis)
+           ======================================================================= */
         async function muatKatalogAsli() {
             try {
-                printLog("🔄 Mengambil data katalog live dari server...");
+                printLog("🔄 Memulai Auto-Discovery Katalog...");
                 
-                // PERBAIKAN: Banyak SMM/OTP Panel yang menggunakan /services bukan /products
-                let res;
-                try {
-                    res = await apiSMSCode('services');
-                } catch(err) {
-                    printLog("Mencoba rute alternatif...");
-                    res = await apiSMSCode('products'); 
-                }
+                // Daftar kemungkinan rute endpoint SMSCode
+                const ruteTebakan = ['catalog', 'products', 'services', 'prices'];
+                let itemDitemukan = null;
+                let ruteSukses = "";
 
-                let items = res.data || res.products || res.services || res.catalog || res;
-
-                if (Array.isArray(items) && items.length > 0) {
-                    let groupedOps = {};
-                    
-                    items.forEach(item => {
-                        let opName = item.operator || item.network || item.carrier || "Any";
-                        if (opName.toLowerCase() === "any") opName = "Any";
+                for (let rute of ruteTebakan) {
+                    try {
+                        printLog(`Mengecek rute /v1/${rute}...`);
+                        const res = await apiSMSCode(rute, 'GET');
+                        let arrData = res.data || res.products || res.services || res.catalog || res.prices || res;
                         
-                        if (!groupedOps[opName]) groupedOps[opName] = [];
-                        
-                        groupedOps[opName].push({
-                            id: item.id || item.catalog_product_id || item.product_id || item.service_id,
-                            name: item.name || item.server_name || `Server ${groupedOps[opName].length + 1}`,
-                            stock: item.stock || item.available || item.qty || 0,
-                            price: item.price || item.cost || item.rate || 0
-                        });
-                    });
-
-                    let newKatalog = [];
-                    for (let op in groupedOps) {
-                        newKatalog.push({
-                            id: op.toLowerCase().replace(/[^a-z0-9]/g, ''),
-                            name: op,
-                            servers: groupedOps[op].sort((a, b) => a.price - b.price) 
-                        });
+                        if (Array.isArray(arrData) && arrData.length > 0) {
+                            itemDitemukan = arrData;
+                            ruteSukses = rute;
+                            break; // Ketemu! Hentikan pencarian
+                        }
+                    } catch(err) {
+                        // Jika 404/405, lanjut coba rute selanjutnya secara diam-diam
                     }
-                    
-                    newKatalog.sort((a, b) => a.name === "Any" ? -1 : (b.name === "Any" ? 1 : 0));
-                    
-                    dataKatalogLayanan = newKatalog;
-                    renderMenuLayananApp(dataKatalogLayanan);
-                    printLog("✅ Katalog live berhasil disinkronkan!");
-                } else {
-                    throw new Error("Respon kosong");
                 }
+
+                if (!itemDitemukan) {
+                    throw new Error("Semua rute (/catalog, /products, dll) mengembalikan 404 (Not Found).");
+                }
+
+                printLog(`✅ Data katalog berhasil ditarik dari rute /${ruteSukses}!`);
+
+                let groupedOps = {};
+                itemDitemukan.forEach(item => {
+                    // Coba mendeteksi nama operator, fallback ke "Any"
+                    let opName = item.operator || item.network || item.carrier || "Any";
+                    if (opName.toLowerCase() === "any") opName = "Any";
+                    if (!groupedOps[opName]) groupedOps[opName] = [];
+                    
+                    groupedOps[opName].push({
+                        id: item.id || item.catalog_product_id || item.product_id || item.service_id,
+                        name: item.name || item.server_name || `Server ${groupedOps[opName].length + 1}`,
+                        stock: item.stock || item.available || item.qty || 0,
+                        price: item.price || item.cost || item.rate || 0
+                    });
+                });
+
+                let newKatalog = [];
+                for (let op in groupedOps) {
+                    newKatalog.push({
+                        id: op.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                        name: op,
+                        servers: groupedOps[op].sort((a, b) => a.price - b.price) 
+                    });
+                }
+                
+                newKatalog.sort((a, b) => a.name === "Any" ? -1 : (b.name === "Any" ? 1 : 0));
+                dataKatalogLayanan = newKatalog;
+                renderMenuLayananApp(dataKatalogLayanan);
+
             } catch (e) {
-                printLog(`⚠️ Gagal tarik katalog live (${e.message}). Memakai fallback.`);
+                printLog(`⚠️ Auto-Discovery Gagal: ${e.message}`);
+                printLog(`⚠️ Memuat data fallback sementara.`);
                 dataKatalogLayanan = fallbackKatalog;
                 renderMenuLayananApp(dataKatalogLayanan);
             }
         }
-        /* ==================================================== */
+        /* ======================================================================= */
 
         function renderMenuLayananApp(katalogData) {
             const container = document.getElementById("operatorAccordionContainer");
@@ -351,7 +379,7 @@
                 }
             } catch (e) { 
                 alert("Gagal order:\n" + e.message); 
-                printLog(`Error: ${e.message}`);
+                printLog(`Error Order: ${e.message}`);
             } finally { 
                 btnElement.disabled = false; 
                 btnElement.innerHTML = teksAsli; 
@@ -442,7 +470,11 @@
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2_shopee", JSON.stringify(daftarOrderan)); }
         function hapusRiwayatSelesai() { daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
-        function printLog(t) { document.getElementById("miniConsoleLog").innerHTML += `<br>└> ${t}`; document.getElementById("miniConsoleLog").scrollTop = 9999; }
+        function printLog(t) { 
+            const consoleBox = document.getElementById("miniConsoleLog");
+            consoleBox.innerHTML += `<br>└> ${t}`; 
+            consoleBox.scrollTop = consoleBox.scrollHeight; 
+        }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
 
