@@ -82,25 +82,22 @@
     <script>
         let daftarOrderan = []; 
         let saldoSekarangGlobal = 0;
-        const KODE_LAYANAN_SHOPEE = "shopee"; 
 
-        // REQUEST MENGGUNAKAN PROXY MULTI-PATH UTAMA & ALTERNATIF AMAN
-        async function apiSMSCode(endpoint, method = "GET", payload = null) {
+        async function apiSMSCode(endpoint, method = "GET", queryParams = "") {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("API Key belum disetting.");
 
-            const targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
+            let targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
+            if (queryParams) targetUrl += `?${queryParams}`;
+
             let options = {
                 method: method,
                 headers: {
                     "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
                     "Accept": "application/json"
                 }
             };
-            if (payload) options.body = JSON.stringify(payload);
 
-            // Daftar jalur alternatif untuk menembus proteksi server target
             const gateways = [
                 "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
                 "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
@@ -152,7 +149,7 @@
 
         async function ambilSaldoLive() {
             try {
-                const d = await apiSMSCode('balance');
+                const d = await apiSMSCode('balance', 'GET');
                 saldoSekarangGlobal = parseInt(d.balance || d.amount || 0);
                 document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
                 printLog("Saldo berhasil dimuat.");
@@ -169,9 +166,10 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                // Langsung melakukan order Shopee ID tanpa harus meload seluruh list layanan yang besar
-                const data = await apiSMSCode('order', 'POST', { service: KODE_LAYANAN_SHOPEE, country: "ID" });
-                if (data.id || data.phone || data.status === "success" || data.number) {
+                // Menggunakan parameter query URL standar untuk pemesanan (service=shopee&country=id)
+                const data = await apiSMSCode('order', 'GET', 'service=shopee&country=id');
+                
+                if (data.id || data.order_id || data.phone || data.number || data.status === "success" || data.success === true) {
                     let orderBaru = { 
                         order_id: data.id || data.order_id, 
                         phone: data.phone || data.number, 
@@ -184,12 +182,12 @@
                     daftarOrderan.unshift(orderBaru); renderUILayout(); simpanDaftarOrderanKeLokal();
                     printLog(`Nomor Shopee berhasil didapatkan!`); ambilSaldoLive();
                 } else { 
-                    alert(`Gagal: ${data.message || data.error || 'Stok habis / Token tidak valid'}`); 
-                    printLog(`Order ditolak server.`);
+                    alert(`Gagal Order: ${data.message || data.error || 'Stok habis / Token tidak valid'}`); 
+                    printLog(`Error Server: ${data.message || 'Ditolak'}`);
                 }
             } catch (e) { 
                 alert("Gagal memproses pesanan ke server SMSCode."); 
-                printLog(`Error Order.`);
+                printLog(`Error Koneksi Order.`);
             } finally { 
                 btn.disabled = false; btn.innerHTML = teksAsli; 
             }
@@ -198,7 +196,7 @@
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             try {
-                await apiSMSCode(`cancel/${item.order_id}`, 'POST');
+                await apiSMSCode(`cancel/${item.order_id}`, 'GET');
                 item.status = "cancelled"; showToast("Dibatalkan!"); renderUILayout(); simpanDaftarOrderanKeLokal(); await ambilSaldoLive();
             } catch (e) { alert("Gagal membatalkan pesanan."); }
         }
@@ -207,7 +205,7 @@
             daftarOrderan.forEach(async (i) => {
                 if (i.status !== "pending") return; 
                 try {
-                    const d = await apiSMSCode(`check/${i.order_id}`);
+                    const d = await apiSMSCode(`check/${i.order_id}`, 'GET');
                     if (d.status === "received" || d.status === "success" || d.code || d.sms) {
                         i.status = "received"; i.otp = d.code || d.sms || d.otp; 
                         putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
