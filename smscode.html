@@ -22,7 +22,7 @@
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        /* === GAYA UI APLIKASI NATIVE (Sesuai Video) === */
+        /* === GAYA UI APLIKASI NATIVE === */
         .app-ui-container { background: #ffffff; border-radius: 16px; padding: 12px; margin-top: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .app-header-nav { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px 15px 10px; border-bottom: 1px solid #f1f5f9; }
         .app-header-left { display: flex; align-items: center; gap: 15px; }
@@ -188,67 +188,77 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* === TARIK KATALOG FLEKSIBEL (PECAHAN SERVER) === */
+        /* === TARIK KATALOG DENGAN SMART OPERATOR MAPPING === */
         async function muatKatalogFlexible() {
             try {
-                printLog("🔄 Menarik katalog Shopee (Tier Servers)...");
+                printLog("🔄 Menarik katalog Shopee (Smart Match)...");
                 
-                // Ambil hingga 10.000 data agar tidak ada yang terlewat
                 const resProd = await apiSMSCode('catalog/products?country_id=7&limit=10000', 'GET');
                 let arrData = resProd.data;
                 
                 let shopeeItems = arrData.filter(item => (item.name || "").toLowerCase().includes("shopee"));
                 if (shopeeItems.length === 0) throw new Error("Layanan Shopee tidak tersedia saat ini.");
                 
-                // Urutan Operator Default Sesuai Video
-                const baseOperators = ["Any", "AXIS (XL Axiata)", "Indosat Ooredoo", "Telkomsel", "Three", "smartfren"];
-                let groupedOps = {};
-                baseOperators.forEach(op => groupedOps[op] = []); 
+                // Daftar kategori operator utama yang ditampilkan
+                const targetOperators = [
+                    { label: "Any", keys: ["any", "random"] },
+                    { label: "AXIS (XL Axiata)", keys: ["axis", "xl"] },
+                    { label: "Indosat Ooredoo", keys: ["indosat", "ooredoo"] },
+                    { label: "Telkomsel", keys: ["telkomsel"] },
+                    { label: "Three", keys: ["three", "3", "tri"] },
+                    { label: "smartfren", keys: ["smartfren", "smart"] }
+                ];
 
-                // Kelompokkan setiap produk ke dalam nama operatornya
+                let groupedOps = {};
+                targetOperators.forEach(op => groupedOps[op.label] = []);
+
                 shopeeItems.forEach(item => {
-                    let opName = item.operator_name;
-                    if (!opName || opName.trim() === "") opName = "Any";
-                    
-                    if (!groupedOps[opName]) groupedOps[opName] = []; 
-                    
-                    groupedOps[opName].push({
-                        id: item.id, // Ini product_id untuk direct buy per tier
-                        stock: item.available || item.stock || 0, 
-                        price: item.price || 0 
+                    let rawOpName = (item.operator_name || "").toLowerCase().trim();
+                    let matchedLabel = "Any";
+
+                    if (rawOpName === "" || rawOpName === "any") {
+                        matchedLabel = "Any";
+                    } else {
+                        for (let target of targetOperators) {
+                            if (target.label === "Any") continue;
+                            let matchFound = target.keys.some(k => rawOpName.includes(k));
+                            if (matchFound) {
+                                matchedLabel = target.label;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!groupedOps[matchedLabel]) groupedOps[matchedLabel] = [];
+
+                    groupedOps[matchedLabel].push({
+                        id: item.id,
+                        stock: item.available || item.stock || 0,
+                        price: item.price || 0
                     });
                 });
 
                 let newKatalog = [];
-                for (let opName in groupedOps) {
-                    // Urutkan tier dari yang termurah
-                    let servers = groupedOps[opName].sort((a, b) => a.price - b.price);
-                    
-                    // Labeli sebagai Server 1, Server 2, dst
-                    servers = servers.map((srv, index) => ({
+                targetOperators.forEach(target => {
+                    let rawList = groupedOps[target.label] || [];
+                    // Urutkan dari harga termurah
+                    rawList.sort((a, b) => a.price - b.price);
+
+                    let servers = rawList.map((srv, index) => ({
                         ...srv,
                         name: `Server ${index + 1}`
                     }));
 
                     newKatalog.push({
-                        id: opName.toLowerCase().replace(/[^a-z0-9]/g, ''),
-                        name: opName,
+                        id: target.label.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                        name: target.label,
                         servers: servers
                     });
-                }
-                
-                // Urutkan penempatan akordion sesuai aslinya
-                newKatalog.sort((a, b) => {
-                    let idxA = baseOperators.indexOf(a.name);
-                    let idxB = baseOperators.indexOf(b.name);
-                    if (idxA === -1) idxA = 999;
-                    if (idxB === -1) idxB = 999;
-                    return idxA - idxB;
                 });
 
                 dataKatalogLayanan = newKatalog;
                 renderMenuLayananApp(dataKatalogLayanan);
-                printLog(`✅ Ditemukan total ${shopeeItems.length} server.`);
+                printLog(`✅ Katalog Shopee berhasil disinkronkan.`);
 
             } catch (e) {
                 printLog(`⚠️ Error: ${e.message}`);
@@ -310,7 +320,6 @@
         function renderIsiServerMenu(opId, listEl) {
             const op = dataKatalogLayanan.find(o => o.id === opId);
             
-            // Tampilan jika stok kosong (seperti di video pada bagian 'Three')
             if(!op || op.servers.length === 0) {
                 listEl.innerHTML = `<div class="no-product-text">No products available</div>`;
                 return;
@@ -346,7 +355,6 @@
             printLog(`Memesan ${fullServiceName}...`);
 
             try {
-                // Tembak langsung ke ID Produk server bersangkutan (bukan catalog_product_id)
                 const payloadOrder = { product_id: productId, quantity: 1 };
                 const responseData = await apiSMSCode('orders/create', 'POST', payloadOrder);
                 const createdOrder = responseData.data?.orders?.[0];
