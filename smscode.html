@@ -90,8 +90,14 @@
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
-            const paramSeparator = endpoint.includes('?') ? '&' : '?';
-            const targetUrl = `https://api.smscode.gg/v1/${endpoint}${paramSeparator}nocache=${Date.now()}`;
+            let targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
+            
+            // PERBAIKAN: Parameter nocache HANYA ditambahkan pada metode GET.
+            // Menambahkan query string pada metode POST dapat memicu respon HTTP 405 dari router server API.
+            if (method === "GET") {
+                const paramSeparator = endpoint.includes('?') ? '&' : '?';
+                targetUrl += `${paramSeparator}nocache=${Date.now()}`;
+            }
             
             let headers = {
                 "Authorization": `Bearer ${token.trim()}`,
@@ -103,10 +109,11 @@
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
+            // PERBAIKAN: Menggunakan proksi yang lebih stabil untuk metode POST dan menyaring proksi yang suka mengubah HTTP headers.
             const proxies = [
-                "", // Urutan 1: Direct API (Tanpa proxy)
-                "https://thingproxy.freeboard.io/fetch/", // Urutan 2: Proxy alternatif
-                "https://corsproxy.io/?" // Urutan 3
+                "", 
+                "https://corsproxy.io/?",
+                "https://api.codetabs.com/v1/proxy?quest="
             ];
 
             let lastError = null;
@@ -139,7 +146,7 @@
                 }
             }
             
-            throw new Error(lastError ? lastError.message : "Unknown error");
+            throw new Error(lastError ? lastError.message : "Koneksi gagal di semua rute proxy.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -179,8 +186,6 @@
                 printLog("Mengecek saldo ke server...");
                 const d = await apiSMSCode('balance', 'GET'); 
                 
-                console.log("RAW RESPONS SALDO:", d);
-
                 let saldoVal = 0;
                 if (d.balance !== undefined) saldoVal = d.balance;
                 else if (d.amount !== undefined) saldoVal = d.amount;
