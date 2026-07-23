@@ -80,7 +80,7 @@
 </head>
 <body>
 
-<!-- === PANEL MENU SERVER 1 & SERVER 2 === -->
+<!-- === PANEL MENU SERVER 1 & SERVER 2 (MENGGUNAKAN IFRAME TERPISAH) === -->
 <div class="wrapper-menu-server">
     <!-- Server 1 -->
     <div>
@@ -109,7 +109,6 @@
             const wadah = document.getElementById(wadahId);
             const panah = document.getElementById(panahId);
             
-            // Tutup panel lain jika ingin bergantian (opsional, dibiarkan mandiri agar fleksibel)
             if (wadah.style.display === "none" || wadah.style.display === "") {
                 wadah.style.display = "block";
                 panah.style.transform = "rotate(180deg)";
@@ -427,7 +426,7 @@
                         renderNotesList(combinedText);
                     } else { throw new Error(); }
                 } catch(e) {
-                    alert("Gagal memperbarui Cloud. Periksa konfigurasi Token Anda.");
+                    alert("Galog memperbarui Cloud. Periksa konfigurasi Token Anda.");
                     statusLabel.innerText = "(Gagal Menyimpan)";
                 } finally {
                     btnAdmin.disabled = false;
@@ -465,4 +464,3 @@
     </script>
 </body>
 </html>
-
