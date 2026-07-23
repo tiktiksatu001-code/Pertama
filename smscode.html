@@ -90,40 +90,55 @@
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
-            const targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
+            // PENAMBAHAN CACHE-BUSTER: Mencegah proxy memberikan data OTP usang
+            const paramSeparator = endpoint.includes('?') ? '&' : '?';
+            const targetUrl = `https://api.smscode.gg/v1/${endpoint}${paramSeparator}nocache=${Date.now()}`;
+            
             let headers = {
                 "Authorization": `Bearer ${token.trim()}`,
                 "Content-Type": "application/json",
                 "Accept": "application/json",
+                "Cache-Control": "no-cache",
                 ...customHeaders
             };
 
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            // Memaksa penggunaan proksi CORS agar tidak diblokir browser GitHub Pages
-            const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+            // PENAMBAHAN FALLBACK PROXY: Jika proxy pertama down, akan coba proxy kedua otomatis
+            const proxies = [
+                "https://corsproxy.io/?",
+                "https://api.codetabs.com/v1/proxy?quest="
+            ];
 
-            try {
-                const res = await fetch(proxyUrl, options);
-                const textResponse = await res.text();
-                
-                let data = {};
-                if (textResponse && textResponse.trim() !== "") {
-                    try {
-                        data = JSON.parse(textResponse);
-                    } catch (err) {
-                        throw new Error("Respon server bukan format JSON.");
+            let lastError = null;
+
+            for (let proxy of proxies) {
+                try {
+                    const proxyUrl = proxy.includes("corsproxy.io") ? proxy + encodeURIComponent(targetUrl) : proxy + targetUrl;
+                    
+                    const res = await fetch(proxyUrl, options);
+                    const textResponse = await res.text();
+                    
+                    let data = {};
+                    if (textResponse && textResponse.trim() !== "") {
+                        try {
+                            data = JSON.parse(textResponse);
+                        } catch (err) {
+                            throw new Error("Respon server bukan format JSON.");
+                        }
                     }
-                }
 
-                if (!res.ok) {
-                    throw new Error(data.error?.message || data.message || `Gagal server (HTTP ${res.status})`);
+                    if (!res.ok) {
+                        throw new Error(data.error?.message || data.message || `Gagal server (HTTP ${res.status})`);
+                    }
+                    return data; // Sukses di proxy ini
+                } catch (e) {
+                    lastError = e; // Simpan error, dan looping ke proxy selanjutnya
                 }
-                return data;
-            } catch (e) {
-                throw new Error("Koneksi gagal/diblokir jaringan: " + e.message);
             }
+            
+            throw new Error("Koneksi gagal di semua proxy: " + (lastError ? lastError.message : "Unknown error"));
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -179,7 +194,7 @@
             btn.innerHTML = `Memproses...`;
 
             try {
-                const catalogProductId = 87; // ID Katalog Shopee Indonesia
+                const catalogProductId = 87; 
 
                 printLog(`Membuat pesanan Shopee (Katalog ID: ${catalogProductId})...`);
                 const idempotencyKey = generateIdempotencyKey();
