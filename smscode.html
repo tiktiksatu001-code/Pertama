@@ -54,7 +54,7 @@
         <div>
             <label style="font-size: 12px; color: var(--text-sub); display: block; margin-bottom: 4px;">Layanan Terpilih</label>
             <div class="pemicu-dropdown" style="background: #1e2042; border-color: #008060; cursor: default;">
-                <span id="txtLayananTerpilihHeader" style="font-size: 12px; color: #00ffcc; font-weight: bold;">Shopee (Indonesia) — Memuat harga...</span>
+                <span id="txtLayananTerpilihHeader" style="font-size: 12px; color: #00ffcc; font-weight: bold;">Shopee (Indonesia) — Siap Order</span>
             </div>
             
             <button onclick="prosesPesanSekarang()" class="btn-pesan-premium" id="btnPesanUtama">
@@ -82,9 +82,9 @@
     <script>
         let daftarOrderan = []; 
         let saldoSekarangGlobal = 0;
-        let hargaShopeeLive = 0;
-        const KODE_LAYANAN_SHOPEE = "shopee"; // Kode standar layanan Shopee di SMSCode
+        const KODE_LAYANAN_SHOPEE = "shopee"; 
 
+        // REQUEST MENGGUNAKAN PROXY MULTI-PATH UTAMA & ALTERNATIF AMAN
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("API Key belum disetting.");
@@ -100,19 +100,22 @@
             };
             if (payload) options.body = JSON.stringify(payload);
 
-            const proxies = [
-                targetUrl,
+            // Daftar jalur alternatif untuk menembus proteksi server target
+            const gateways = [
                 "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
-                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl)
+                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
+                targetUrl
             ];
 
-            for (let url of proxies) {
+            for (let url of gateways) {
                 try {
                     const res = await fetch(url, options);
-                    if (res.ok) return await res.json();
+                    if (res.ok) {
+                        return await res.json();
+                    }
                 } catch (e) {}
             }
-            throw new Error("Gagal terhubung ke server SMSCode.");
+            throw new Error("Koneksi API diblokir jaringan.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -129,7 +132,6 @@
 
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 2000); 
-            setInterval(refreshSemuaDataLive, 15000); 
         });
 
         function toggleApiKeyDropdown() {
@@ -146,64 +148,51 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); ambilHargaShopee(); }
+        function refreshSemuaDataLive() { ambilSaldoLive(); }
 
         async function ambilSaldoLive() {
             try {
                 const d = await apiSMSCode('balance');
                 saldoSekarangGlobal = parseInt(d.balance || d.amount || 0);
                 document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
-            } catch(e) {}
-        }
-
-        async function ambilHargaShopee() {
-            try {
-                const data = await apiSMSCode('services');
-                let listArray = Array.isArray(data) ? data : (data.services || data.data || []);
-                
-                // Cari layanan Shopee untuk negara Indonesia (ID)
-                let itemShopee = listArray.find(item => {
-                    let code = String(item.code || item.id || "").toLowerCase();
-                    let country = String(item.country || item.country_code || "").toLowerCase();
-                    return code.includes("shopee") && (country === "id" || country === "indonesia" || !country);
-                });
-
-                if (itemShopee) {
-                    hargaShopeeLive = parseInt(itemShopee.price || itemShopee.cost || 0);
-                    let stok = parseInt(itemShopee.stock ?? 999);
-                    document.getElementById("txtLayananTerpilihHeader").innerHTML = `Shopee (Indonesia) <span style="color:#8b8da9; font-size:10px;">(${stok} stok)</span> — <span style="color:#00ffcc;">Rp ${hargaShopeeLive.toLocaleString('id-ID')}</span>`;
-                } else {
-                    document.getElementById("txtLayananTerpilihHeader").innerHTML = `Shopee (Indonesia) — <span style="color:#00ffcc;>Tersedia</span>`;
-                }
-            } catch (e) {
-                printLog("Gagal memuat harga shopee.");
+                printLog("Saldo berhasil dimuat.");
+            } catch(e) {
+                printLog("Gagal sinkron saldo.");
             }
         }
 
         async function prosesPesanSekarang() {
+            const token = localStorage.getItem("otp_key_smscode");
+            if (!token) { alert("Masukkan Bearer Token terlebih dahulu!"); toggleApiKeyDropdown(); return; }
+
             const btn = document.getElementById("btnPesanUtama");
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                // Mengirim request order khusus Shopee dengan negara Indonesia (ID)
+                // Langsung melakukan order Shopee ID tanpa harus meload seluruh list layanan yang besar
                 const data = await apiSMSCode('order', 'POST', { service: KODE_LAYANAN_SHOPEE, country: "ID" });
-                if (data.id || data.phone || data.status === "success") {
+                if (data.id || data.phone || data.status === "success" || data.number) {
                     let orderBaru = { 
                         order_id: data.id || data.order_id, 
                         phone: data.phone || data.number, 
-                        layanan: "Shopee (ID)", 
-                        harga: hargaShopeeLive, 
+                        layanan: "Shopee (Indonesia)", 
+                        harga: 0, 
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
                         otp: "" 
                     };
                     daftarOrderan.unshift(orderBaru); renderUILayout(); simpanDaftarOrderanKeLokal();
-                    printLog(`Nomor Shopee didapatkan!`); ambilSaldoLive();
+                    printLog(`Nomor Shopee berhasil didapatkan!`); ambilSaldoLive();
                 } else { 
-                    alert(`Gagal: ${data.message || data.error || 'Stok habis / Server menolak'}`); 
+                    alert(`Gagal: ${data.message || data.error || 'Stok habis / Token tidak valid'}`); 
+                    printLog(`Order ditolak server.`);
                 }
-            } catch (e) { alert("Gagal memproses pesanan."); } 
-            finally { btn.disabled = false; btn.innerHTML = teksAsli; }
+            } catch (e) { 
+                alert("Gagal memproses pesanan ke server SMSCode."); 
+                printLog(`Error Order.`);
+            } finally { 
+                btn.disabled = false; btn.innerHTML = teksAsli; 
+            }
         }
 
         async function eksekusiBatalkanServer(index) {
@@ -245,7 +234,7 @@
                     kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
                 } else if (item.status === "cancelled") { textStat = "❌ Dibatalkan"; colStat = "#ff5555"; }
                 
-                html += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${item.status === "pending" ? `<button class="btn-batal" ${cool>0?'disabled':''} onclick="eksekusiBatalkanServer(${index})">${cool>0?`Batalkan (${cool}s)`:'❌ Batalkan Pesanan'}</button>` : ''}</div>`;
+                html += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${item.status === "pending" ? `<button class="btn-batal" ${cool>0?'disabled':''} onclick="eksekusiBatalkanServer(${index})">${cool>0?`Batalkan (${cool}s)`:'❌ Batalkan Pesanan'}</button>` : ''}</div>`;
             });
             container.innerHTML = html; if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
