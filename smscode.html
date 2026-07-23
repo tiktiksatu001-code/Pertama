@@ -82,38 +82,31 @@
     <script>
         let daftarOrderan = []; 
 
-        function generateIdempotencyKey() {
-            return 'idempotency-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-        }
-
-        async function apiSMSCode(endpoint, method = "GET", payload = null, customHeaders = {}) {
+        async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
             let targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
             
-            // PERBAIKAN: Parameter nocache HANYA ditambahkan pada metode GET.
-            // Menambahkan query string pada metode POST dapat memicu respon HTTP 405 dari router server API.
             if (method === "GET") {
                 const paramSeparator = endpoint.includes('?') ? '&' : '?';
                 targetUrl += `${paramSeparator}nocache=${Date.now()}`;
             }
             
+            // Header super bersih (tanpa custom header aneh-aneh) agar lolos CORS
             let headers = {
                 "Authorization": `Bearer ${token.trim()}`,
                 "Content-Type": "application/json",
-                "Accept": "application/json",
-                ...customHeaders
+                "Accept": "application/json"
             };
 
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            // PERBAIKAN: Menggunakan proksi yang lebih stabil untuk metode POST dan menyaring proksi yang suka mengubah HTTP headers.
             const proxies = [
-                "", 
-                "https://corsproxy.io/?",
-                "https://api.codetabs.com/v1/proxy?quest="
+                "", // Urutan 1: Direct API (Prioritas utama)
+                "https://corsproxy.io/?", // Urutan 2: Proxy standar
+                "https://api.allorigins.win/raw?url=" // Urutan 3: Proxy cadangan tangguh
             ];
 
             let lastError = null;
@@ -122,7 +115,8 @@
                 try {
                     let proxyUrl = targetUrl;
                     if (proxy !== "") {
-                        proxyUrl = proxy.includes("corsproxy.io") ? proxy + encodeURIComponent(targetUrl) : proxy + targetUrl;
+                        // PERBAIKAN: Tidak menggunakan encodeURIComponent untuk corsproxy.io karena merusak HTTP Method
+                        proxyUrl = proxy.includes("corsproxy.io") ? proxy + targetUrl : proxy + encodeURIComponent(targetUrl);
                     }
                     
                     const res = await fetch(proxyUrl, options);
@@ -214,16 +208,15 @@
                 const catalogProductId = 87; 
 
                 printLog(`Membuat pesanan Shopee (Katalog ID: ${catalogProductId})...`);
-                const idempotencyKey = generateIdempotencyKey();
+                
+                // PERBAIKAN: Payload yang lebih sederhana, membuang custom header (idempotency-key) dari fetch.
                 const payloadOrder = {
                     catalog_product_id: catalogProductId,
                     max_price: 15000, 
                     quantity: 1
                 };
 
-                const responseData = await apiSMSCode('orders', 'POST', payloadOrder, {
-                    "idempotency-key": idempotencyKey
-                });
+                const responseData = await apiSMSCode('orders', 'POST', payloadOrder);
 
                 const createdOrder = responseData.data?.orders?.[0] || responseData.orders?.[0] || responseData.data;
 
