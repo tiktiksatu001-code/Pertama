@@ -22,7 +22,7 @@
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        /* === GAYA DROPDOWN PILIHAN SERVER === */
+        /* === GAYA DROPDOWN PILIHAN SERVER SEPERTI GAMBAR === */
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
         .dropdown-selected-bar { background: #121324; border: 1px solid #4a3c8c; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
         .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
@@ -33,13 +33,6 @@
         .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-pesan-sekarang:hover { opacity: 0.9; }
         .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; box-shadow: none; }
-
-        /* === TAMPILAN HISTORY ORDER DROPDOWN === */
-        .history-section { margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px; }
-        .history-dropdown-header { background: #181933; border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: var(--accent-cyan); user-select: none; }
-        .history-list-container { display: none; margin-top: 8px; max-height: 300px; overflow-y: auto; background: #15162c; border: 1px solid #282a52; border-radius: 10px; padding: 8px; }
-        .history-list-container.active { display: block; }
-        .history-item-row { background: #121324; border: 1px solid #222448; border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: 11.5px; }
     </style>
 </head>
 <body>
@@ -72,17 +65,25 @@
         <!-- UI DROPDOWN PILIHAN LAYANAN SERVER -->
         <div class="dropdown-box-wrapper">
             <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600;">Pilih Layanan</div>
+            
+            <!-- Bar Utama yang Diklik untuk Membuka Dropdown -->
             <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
                 <span id="labelServerTerpilih">Memuat Server...</span>
                 <span style="font-size: 10px;">▼</span>
             </div>
-            <div id="containerListDropdown" class="dropdown-list-options"></div>
+
+            <!-- Daftar Pilihan Server -->
+            <div id="containerListDropdown" class="dropdown-list-options">
+                <!-- Diisi otomatis oleh Javascript -->
+            </div>
+
+            <!-- Tombol Pesan -->
             <button class="btn-pesan-sekarang" id="btnPesanAksi" onclick="eksekusiBeliTerpilih()" disabled>
                 <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
             </button>
         </div>
 
-        <!-- NOMOR & OTP AKTIF -->
+        <!-- RIWAYAT / NOMOR AKTIF -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
@@ -93,19 +94,8 @@
             </div>
         </div>
 
-        <!-- MENU HISTORY ORDER (MODEL DROPDOWN DENGAN WAKTU & TANGGAL) -->
-        <div class="history-section">
-            <div class="history-dropdown-header" onclick="toggleHistoryDropdown()">
-                <span>📜 History Order (Riwayat Server)</span>
-                <span id="panahHistory" style="font-size: 10px;">▼</span>
-            </div>
-            <div id="containerHistoryList" class="history-list-container">
-                <div style="text-align: center; padding: 15px; color: #6272a4; font-style: italic; font-size: 11px;">Memuat riwayat...</div>
-            </div>
-        </div>
-
-        <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
-            └> Ready.
+        <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
+            └> Any Server Selector Ready.
         </div>
     </div>
     
@@ -137,18 +127,22 @@
             ];
 
             let networkError = null;
+
             for (let proxy of proxies) {
                 try {
                     let proxyUrl = targetUrl;
                     if (proxy.url !== "") { 
                         proxyUrl = proxy.encode ? proxy.url + encodeURIComponent(targetUrl) : proxy.url + targetUrl; 
                     }
+                    
                     const res = await fetch(proxyUrl, options);
                     const textResponse = await res.text();
+                    
                     let data = {};
                     if (textResponse && textResponse.trim() !== "") {
                         try { data = JSON.parse(textResponse); } catch (err) {}
                     }
+                    
                     if (!res.ok) {
                         let msg = data.error?.message || data.message || `HTTP ${res.status}`;
                         throw new Error(`[HTTP ${res.status}] ${msg}`);
@@ -176,27 +170,28 @@
             const orderanLokal = localStorage.getItem("daftar_orderan_srv2_shopee");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
-            if(savedKey) {
-                muatKatalogAnyOnly();
-                muatHistoryOrderAPI();
-            }
+            if(savedKey) muatKatalogAnyOnly();
 
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
+        /* === TARIK KHUSUS KATEGORI ANY (SEMUA SERVER SHOPEE) === */
         async function muatKatalogAnyOnly() {
             try {
-                printLog("🔄 Menarik data server Shopee...");
-                const resProd = await apiSMSCode('catalog/products?country_id=7&limit=500', 'GET');
+                printLog("🔄 Menarik data server Shopee (Any)...");
+                
+                const resProd = await apiSMSCode('catalog/products?country_id=7&limit=10000', 'GET');
                 let arrData = resProd.data;
                 
+                // Ambil semua yang mengandung kata shopee
                 let shopeeItems = arrData.filter(item => (item.name || "").toLowerCase().includes("shopee"));
-                if (shopeeItems.length === 0) throw new Error("Layanan Shopee kosong.");
+                if (shopeeItems.length === 0) throw new Error("Layanan Shopee tidak tersedia.");
 
+                // Urutkan dari harga termurah
                 shopeeItems.sort((a, b) => (a.price || 0) - (b.price || 0));
 
-                daftarServerTersedia = shopeeItems.map((item) => ({
+                daftarServerTersedia = shopeeItems.map((item, index) => ({
                     id: item.id,
                     stock: item.available || item.stock || 0,
                     price: item.price || 0,
@@ -204,71 +199,18 @@
                 }));
 
                 renderDropdownOptions();
+
                 if (daftarServerTersedia.length > 0) {
-                    pilihServerDropdown(0);
+                    pilihServerDropdown(0); // Pilih default tier termurah pertama
                 } else {
                     document.getElementById("labelServerTerpilih").innerText = "Tidak ada stok tersedia";
                 }
+
                 printLog(`✅ Ditemukan ${daftarServerTersedia.length} pilihan server.`);
+
             } catch (e) {
-                printLog(`⚠️ Error API: ${e.message}. Menggunakan Mode Fallback Server.`);
-                
-                // Fallback manual jika server utama error 502 / gagal koneksi
-                daftarServerTersedia = [
-                    { id: 142, stock: "Available", price: 15000, name: "Shopee Tier 1 (Fallback)" },
-                    { id: 87, stock: "Available", price: 15000, name: "Shopee Tier 2 (Fallback)" }
-                ];
-                renderDropdownOptions();
-                pilihServerDropdown(0);
-            }
-        }
-
-        async function muatHistoryOrderAPI() {
-            const container = document.getElementById("containerHistoryList");
-            try {
-                const res = await apiSMSCode('orders?limit=20', 'GET');
-                let orders = res.data;
-                if (!Array.isArray(orders) || orders.length === 0) {
-                    container.innerHTML = `<div style="text-align: center; padding: 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat order di server.</div>`;
-                    return;
-                }
-
-                let html = "";
-                orders.forEach(ord => {
-                    let statColor = ord.status === "COMPLETED" || ord.status === "OTP_RECEIVED" ? "#50fa7b" : (ord.status === "ACTIVE" ? "#ffb86c" : "#ff5555");
-                    let tanggalFormat = "-";
-                    if (ord.created_at) {
-                        let d = new Date(ord.created_at);
-                        tanggalFormat = d.toLocaleDateString("id-ID", { day: '2-digit', month: 'short', year: 'numeric' }) + " " + d.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    }
-
-                    html += `
-                    <div class="history-item-row">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px;">
-                            <span>ID: #${ord.id}</span>
-                            <span style="color:${statColor};">${ord.status}</span>
-                        </div>
-                        <div style="color:#aaa; font-size:10px; margin-bottom:3px;">📅 ${tanggalFormat}</div>
-                        <div style="color:#ddd; margin-bottom:2px;">No: <b>${ord.phone_number || '-'}</b></div>
-                        <div style="color:var(--accent-cyan);">OTP: <b>${ord.otp_code || 'Belum ada'}</b></div>
-                    </div>`;
-                });
-                container.innerHTML = html;
-            } catch(e) {
-                container.innerHTML = `<div style="text-align: center; padding: 10px; color: #ff5555; font-size: 11px;">Gagal memuat history.</div>`;
-            }
-        }
-
-        function toggleHistoryDropdown() {
-            const list = document.getElementById("containerHistoryList");
-            const panah = document.getElementById("panahHistory");
-            if (list.classList.contains("active")) {
-                list.classList.remove("active");
-                panah.style.transform = "rotate(0deg)";
-            } else {
-                list.classList.add("active");
-                panah.style.transform = "rotate(180deg)";
-                muatHistoryOrderAPI();
+                printLog(`⚠️ Error: ${e.message}`);
+                document.getElementById("labelServerTerpilih").innerText = "Gagal memuat server";
             }
         }
 
@@ -292,7 +234,8 @@
         }
 
         function toggleDropdownList() {
-            document.getElementById("containerListDropdown").classList.toggle("active");
+            const list = document.getElementById("containerListDropdown");
+            list.classList.toggle("active");
         }
 
         function pilihServerDropdown(index) {
@@ -303,6 +246,7 @@
             namaProdukTerpilih = `Shopee (Rp ${srv.price.toLocaleString('id-ID')})`;
             
             document.getElementById("labelServerTerpilih").innerHTML = `Shopee <span style="color:var(--text-sub); font-size:11px;">(${srv.stock} stok)</span> — <span style="color:var(--accent-cyan);">Rp ${srv.price.toLocaleString('id-ID')}</span>`;
+            
             document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false;
             renderDropdownOptions();
@@ -314,7 +258,7 @@
             const btn = document.getElementById("btnPesanAksi");
             const teksAsli = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> MEMPROSES...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> MEMPROSES PESANAN...`;
             printLog(`Memesan ${namaProdukTerpilih}...`);
 
             try {
@@ -330,11 +274,9 @@
                         waktu_dibuat: Date.now(), status: "pending", otp: "" 
                     };
                     daftarOrderan.unshift(orderBaru); 
-                    renderUILayout(); 
-                    simpanDaftarOrderanKeLokal();
+                    renderUILayout(); simpanDaftarOrderanKeLokal();
                     printLog(`🎉 Nomor didapatkan: ${createdOrder.phone_number}`); 
                     ambilSaldoLive();
-                    muatHistoryOrderAPI(); 
                 } else { throw new Error("Respon pesanan ditolak sistem."); }
             } catch (e) { 
                 alert("Gagal order:\n" + e.message); printLog(`Error: ${e.message}`);
@@ -351,18 +293,16 @@
         function simpanKonfigurasi() {
             const key = document.getElementById("otpKeyV5").value.trim();
             if(!key) { alert("Masukkan Token!"); return; }
+            
             localStorage.setItem("otp_key_smscode", key);
             document.getElementById("statusKeyV5").innerText = "✅ Token Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
+            
             refreshSemuaDataLive(); 
             toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { 
-            ambilSaldoLive(); 
-            muatKatalogAnyOnly(); 
-            muatHistoryOrderAPI();
-        }
+        function refreshSemuaDataLive() { ambilSaldoLive(); muatKatalogAnyOnly(); }
 
         async function ambilSaldoLive() {
             try {
@@ -378,10 +318,7 @@
                 await apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id });
                 item.status = "cancelled"; 
                 showToast("Dibatalkan!"); 
-                renderUILayout(); 
-                simpanDaftarOrderanKeLokal(); 
-                ambilSaldoLive();
-                muatHistoryOrderAPI();
+                renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
             } catch (e) { alert("Gagal membatalkan."); }
         }
 
@@ -398,18 +335,10 @@
 
                     if (stat === "OTP_RECEIVED" || otpCode) {
                         i.status = "received"; i.otp = otpCode; 
-                        putarSuaraNotif(); 
-                        munculkanPopupNative(i.phone, i.otp, i.layanan);
-                        renderUILayout(); 
-                        simpanDaftarOrderanKeLokal(); 
-                        printLog(`🎉 OTP MASUK (${i.otp})!`);
-                        muatHistoryOrderAPI();
+                        putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
+                        renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
                     } else if (stat === "CANCELED" || stat === "CANCELLED" || stat === "EXPIRED" || stat === "REFUNDED") {
-                        i.status = "cancelled"; 
-                        renderUILayout(); 
-                        simpanDaftarOrderanKeLokal(); 
-                        ambilSaldoLive();
-                        muatHistoryOrderAPI();
+                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                     }
                 } catch (e) {}
             });
