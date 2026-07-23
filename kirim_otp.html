@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Otomatis OTP - Multi Server (v16)</title>
+    <title>Panel Otomatis OTP - Multi Server (v16.1)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -84,7 +84,7 @@
                     <option value="1">🟢 Server 1 (OTPInstan)</option>
                     <option value="2">🔵 Server 2 (SMSCode.gg)</option>
                 </select>
-                <span class="badge-promo">v16 Multi</span>
+                <span class="badge-promo">v16.1 SmartFix</span>
             </div>
             
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: var(--accent-green);">
@@ -112,7 +112,7 @@
         <div>
             <label style="font-size: 13px; color: var(--text-sub); display: block; margin-bottom: 5px;">Pilih Layanan</label>
             <div class="pemicu-dropdown" id="btnTriggerDropdown" onclick="toggleMekanismeDropdown()">
-                <span id="txtLayananTerpilihHeader">Menghubungkan server...</span>
+                <span id="txtLayananTerpilihHeader">Pilih Layanan / Menghubungkan...</span>
                 <span id="ikonPanahDropdown" style="transition: transform 0.2s; font-size: 12px;">▼</span>
             </div>
             <div class="wrapper-layanan" id="boxLayananShopee">
@@ -140,7 +140,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 11px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
-            └> System Ready (Multi-Server Enabled).
+            └> System Ready (Smart Fetch Engine).
         </div>
     </div>
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
@@ -157,16 +157,11 @@
         // KONFIGURASI SERVER MULTIPLE
         let activeServerId = "1"; 
 
+        // ==================== UPDATE v16.1: SMART FETCH ENGINE ====================
         async function fetchSmartProxy(targetUrl, isPost = false, postBody = null, authBearer = null) {
-            const isStateChanging = targetUrl.includes("order") || targetUrl.includes("cancel");
-            const proxies = isStateChanging ? [
-                "https://corsproxy.io/?",
-                "https://api.codetabs.com/v1/proxy?quest="
-            ] : ["", "https://corsproxy.io/?", "https://api.codetabs.com/v1/proxy?quest="];
-
             let options = { method: isPost ? "POST" : "GET", headers: {} };
             
-            // Konfigurasi Header untuk SMSCode (Memakai Bearer Token & JSON JSON)
+            // Atur Headers
             if (authBearer) {
                 options.headers["Authorization"] = `Bearer ${authBearer}`;
                 if (isPost) {
@@ -174,22 +169,31 @@
                     options.body = JSON.stringify(postBody);
                 }
             } else if (isPost && postBody) {
-                // Konfigurasi Header lama untuk Server 1 (x-www-form-urlencoded)
                 options.headers["Content-Type"] = "application/x-www-form-urlencoded";
                 options.body = new URLSearchParams(postBody).toString();
             }
 
+            // PERCOBAAN 1: KONEKSI LANGSUNG (Tanpa Proxy) - Diutamakan untuk SMSCode
+            try {
+                const directRes = await fetch(targetUrl, options);
+                const data = await directRes.json();
+                // Mengembalikan data apapun hasilnya (meskipun error 401/404) agar bisa dibaca log-nya
+                if (data) return data; 
+            } catch (e) { 
+                console.log("Direct connection failed, trying proxy...", e.message); 
+            }
+
+            // PERCOBAAN 2: JALUR PROXY (Hanya jika koneksi langsung diblokir total/CORS error)
+            const proxies = ["https://corsproxy.io/?", "https://api.codetabs.com/v1/proxy?quest="];
             for (let proxy of proxies) {
                 try {
-                    let url = targetUrl;
-                    if (proxy !== "") {
-                        url = proxy.includes("corsproxy.io") ? proxy + encodeURIComponent(targetUrl) : proxy + targetUrl;
-                    }
+                    let url = proxy.includes("corsproxy.io") ? proxy + encodeURIComponent(targetUrl) : proxy + targetUrl;
                     const res = await fetch(url, options);
-                    if (res.ok) return await res.json();
-                } catch (e) { console.log("Jalur gagal:", proxy || "Direct"); }
+                    const data = await res.json();
+                    if (data) return data;
+                } catch (e) { console.log("Jalur proxy gagal:", proxy); }
             }
-            throw new Error("Semua jalur proxy gagal.");
+            throw new Error("Semua jalur koneksi (Direct & Proxy) gagal terhubung ke server.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -199,7 +203,7 @@
                 document.getElementById("pilihServerApi").value = savedServer;
                 activeServerId = savedServer;
             }
-            gantiServerApi(true); // Panggil awal untuk set-up UI
+            gantiServerApi(true);
 
             const orderanLokal = localStorage.getItem("daftar_orderan_live");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
@@ -216,7 +220,6 @@
             const serverName = activeServerId === "1" ? "OTPInstan" : "SMSCode.gg";
             document.getElementById("judulSettingKey").innerText = `🔑 Set API Key (Server ${activeServerId})`;
             
-            // Cek Ketersediaan Key di LocalStorage sesuai Server
             const keyName = activeServerId === "1" ? "otp_key_reseller" : "otp_key_smscode";
             const savedKey = localStorage.getItem(keyName);
             
@@ -266,11 +269,13 @@
                 if (activeServerId === "1") {
                     d = await fetchSmartProxy(`https://otpinstan.com/api/reseller/balance.php?api_key=${key}&t=${Date.now()}`);
                 } else {
-                    // API SMSCode.gg GET Balance (Memerlukan Bearer Auth)
-                    d = await fetchSmartProxy(`https://smscode.gg/api/v1/balance?t=${Date.now()}`, false, null, key);
+                    // Coba ke domain API resmi SMSCode.gg
+                    d = await fetchSmartProxy(`https://api.smscode.gg/v1/balance?t=${Date.now()}`, false, null, key);
                 }
                 
-                // Mendukung multi respons JSON struktur dari berbagai endpoint
+                // Menampilkan log error asli jika server menolak token
+                if (d.error || d.message) printLog(`[Srv ${activeServerId}] Info Balance: ` + (d.message || d.error));
+
                 saldoSekarangGlobal = parseInt(d.balance || d.saldo || d.balance_reseller || d.amount || 0);
                 document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
             } catch(e) { printLog("Gagal cek saldo: " + e.message); }
@@ -286,10 +291,12 @@
                 if (activeServerId === "1") {
                     data = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/services.php?country_id=7&api_key=${key}&t=${Date.now()}`);
                 } else {
-                    // API SMSCode.gg GET Services
-                    data = await fetchSmartProxy(`https://smscode.gg/api/v1/services?t=${Date.now()}`, false, null, key);
+                    // GET Services SMSCode.gg
+                    data = await fetchSmartProxy(`https://api.smscode.gg/v1/services?t=${Date.now()}`, false, null, key);
                 }
                 
+                if (data.error || data.message) printLog(`[Srv ${activeServerId}] Info Services: ` + (data.message || data.error));
+
                 let listArray = Array.isArray(data) ? data : (data.services || data.data || data.result || []);
                 globalListLayanan = listArray; 
                 renderDaftarLayanan();
@@ -333,7 +340,7 @@
                 });
                 container.innerHTML = html;
             } else {
-                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #8b8da9; font-style: italic;">Layanan tidak ditemukan...</div>`;
+                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #8b8da9; font-style: italic;">Layanan tidak ditemukan/Kosong...</div>`;
             }
         }
 
@@ -361,9 +368,8 @@
                         api_key: apiKey, product_id: idLayananTerpilih, country_id: 7
                     });
                 } else {
-                    // API SMSCode.gg POST Order
-                    data = await fetchSmartProxy(`https://smscode.gg/api/v1/order`, true, {
-                        service: idLayananTerpilih, country: "ID" // Menyesuaikan json body standar
+                    data = await fetchSmartProxy(`https://api.smscode.gg/v1/order`, true, {
+                        service: idLayananTerpilih, country: "ID"
                     }, apiKey);
                 }
 
@@ -379,6 +385,7 @@
                     printLog(`Nomor ${nomer} didapat! Cek OTP 2 detik...`); ambilSaldoLive();
                 } else { 
                     alert(`Gagal: ${data.message || data.msg || data.error || 'Server sibuk'}`); 
+                    printLog(`Info Order: ${data.message || data.error || 'Error'}`);
                 }
             } catch (e) { alert("Error koneksi: " + e.message); }
             finally { btn.disabled = false; btn.innerHTML = teksAsli; }
@@ -395,8 +402,7 @@
                 if (item.server_id === "1") {
                     res = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&api_key=${apiKey}`, true, { api_key: apiKey, order_id: item.order_id });
                 } else {
-                    // API SMSCode.gg POST Cancel
-                    res = await fetchSmartProxy(`https://smscode.gg/api/v1/cancel/${item.order_id}`, true, {}, apiKey);
+                    res = await fetchSmartProxy(`https://api.smscode.gg/v1/cancel/${item.order_id}`, true, {}, apiKey);
                 }
                 
                 item.status = "cancelled"; showToast("Berhasil Dibatalkan! ✨");
@@ -416,8 +422,7 @@
                     if (i.server_id === "1") {
                         d = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/check.php?order_id=${i.order_id}&api_key=${k}`);
                     } else {
-                        // API SMSCode.gg GET Status/Check
-                        d = await fetchSmartProxy(`https://smscode.gg/api/v1/check/${i.order_id}`, false, null, k);
+                        d = await fetchSmartProxy(`https://api.smscode.gg/v1/check/${i.order_id}`, false, null, k);
                     }
                     
                     if (d.status === "received" || d.status === "success" || d.otp || d.sms || d.code) {
