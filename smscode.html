@@ -192,7 +192,7 @@
             try {
                 printLog("🔄 Menarik katalog produk Indonesia (ID 7)...");
                 
-                const res = await apiSMSCode('catalog/products?country_id=7&limit=100', 'GET');
+                const res = await apiSMSCode('catalog/products?country_id=7&limit=10000', 'GET');
                 let arrData = res.data;
                 
                 if (!Array.isArray(arrData)) {
