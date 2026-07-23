@@ -63,9 +63,20 @@
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
 
-        /* === STYLING MENU TOMBOL SERVER GANDA === */
+        /* === STYLING MENU TOMBOL SERVER GANDA (SUDAH DIEDIT) === */
         .wrapper-menu-server {
-            width: 100%; max-width: 420px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;
+            width: 100%; 
+            max-width: 900px; /* Dilebarkan agar simetris dengan panel notes di bawahnya */
+            margin-bottom: 15px; 
+            display: flex; 
+            flex-direction: row; /* Berubah menjadi row agar berjejer horizontal */
+            gap: 15px; /* Jarak antar tombol server */
+        }
+        .server-col {
+            flex: 1; /* Agar masing-masing kotak membagi rata lebar (50:50) */
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px;
         }
         .pemicu-menu-utama {
             background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; 
@@ -80,10 +91,10 @@
 </head>
 <body>
 
-<!-- === PANEL MENU SERVER 1 & SERVER 2 === -->
+<!-- === PANEL MENU SERVER 1 & SERVER 2 (SUDAH DIEDIT) === -->
 <div class="wrapper-menu-server">
     <!-- Server 1 -->
-    <div>
+    <div class="server-col">
         <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP1', 'panahSrv1')">
             <span>🛠️ Server 1 (OTP Instan)</span>
             <span id="panahSrv1">▼</span>
@@ -94,8 +105,8 @@
     </div>
 
     <!-- Server 2 -->
-    <div>
-        <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP2', 'panahSrv2')" style="border-color: #008060;">
+    <div class="server-col">
+        <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff;"> <!-- Border Cyan mengikuti gambar -->
             <span>🔵 Server 2 (SMSCode.gg)</span>
             <span id="panahSrv2">▼</span>
         </div>
