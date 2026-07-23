@@ -90,7 +90,7 @@
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
-            // PENAMBAHAN CACHE-BUSTER: Mencegah proxy memberikan data OTP usang
+            // Penambahan Cache-Buster
             const paramSeparator = endpoint.includes('?') ? '&' : '?';
             const targetUrl = `https://api.smscode.gg/v1/${endpoint}${paramSeparator}nocache=${Date.now()}`;
             
@@ -105,17 +105,23 @@
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            // PENAMBAHAN FALLBACK PROXY: Jika proxy pertama down, akan coba proxy kedua otomatis
+            // PERBAIKAN: Tambahkan string kosong ("") di awal array
+            // Ini akan memaksa sistem mencoba koneksi LANGSUNG (Tanpa Proxy) terlebih dahulu
             const proxies = [
-                "https://corsproxy.io/?",
-                "https://api.codetabs.com/v1/proxy?quest="
+                "", // Urutan 1: Langsung ke API (Paling stabil jika didukung)
+                "https://corsproxy.io/?", // Urutan 2: Proksi cadangan 1
+                "https://api.codetabs.com/v1/proxy?quest=" // Urutan 3: Proksi cadangan 2
             ];
 
             let lastError = null;
 
             for (let proxy of proxies) {
                 try {
-                    const proxyUrl = proxy.includes("corsproxy.io") ? proxy + encodeURIComponent(targetUrl) : proxy + targetUrl;
+                    // Tentukan eksekusi URL (menggunakan encodeURIComponent hanya untuk corsproxy)
+                    let proxyUrl = targetUrl;
+                    if (proxy !== "") {
+                        proxyUrl = proxy.includes("corsproxy.io") ? proxy + encodeURIComponent(targetUrl) : proxy + targetUrl;
+                    }
                     
                     const res = await fetch(proxyUrl, options);
                     const textResponse = await res.text();
@@ -132,9 +138,9 @@
                     if (!res.ok) {
                         throw new Error(data.error?.message || data.message || `Gagal server (HTTP ${res.status})`);
                     }
-                    return data; // Sukses di proxy ini
+                    return data; // Berhasil! Keluar dari loop proxy
                 } catch (e) {
-                    lastError = e; // Simpan error, dan looping ke proxy selanjutnya
+                    lastError = e; // Simpan pesan error, dan otomatis lanjut ke proxy berikutnya di urutan
                 }
             }
             
