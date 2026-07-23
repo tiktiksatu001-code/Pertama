@@ -73,7 +73,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
-            └> Server 2 (SMSCode Official) Ready.
+            └> Server 2 (Shopee Mode) Ready.
         </div>
     </div>
     
@@ -82,37 +82,48 @@
     <script>
         let daftarOrderan = []; 
 
-        // Fungsi Helper Koneksi Mengikuti Standar Resmi SMSCode API (/v1)
-        async function apiSMSCode(endpoint, method = "GET", payload = null) {
+        // Helper untuk generate UUID / Idempotency Key acak sesuai dokumentasi resmi
+        function generateIdempotencyKey() {
+            return 'idempotency-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+
+        async function apiSMSCode(endpoint, method = "GET", payload = null, customHeaders = {}) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
             const targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
-            let options = {
-                method: method,
-                headers: {
-                    "Authorization": `Bearer ${token.trim()}`,
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                }
+            let headers = {
+                "Authorization": `Bearer ${token.trim()}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                ...customHeaders
             };
+
+            let options = { method: method, headers: headers };
             if (payload) options.body = JSON.stringify(payload);
 
             const gateways = [
+                targetUrl,
                 "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
-                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
-                targetUrl
+                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl)
             ];
 
             for (let url of gateways) {
                 try {
                     const res = await fetch(url, options);
+                    const data = await res.json();
                     if (res.ok) {
-                        return await res.json();
+                        return data;
+                    } else {
+                        throw new Error(data.error?.message || data.message || "Gagal dari server");
                     }
-                } catch (e) {}
+                } catch (e) {
+                    if (e.message && e.message !== "Failed to fetch") {
+                        throw e;
+                    }
+                }
             }
-            throw new Error("Gagal terhubung ke gateway API SMSCode.");
+            throw new Error("Koneksi API diblokir jaringan.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -124,11 +135,11 @@
                 refreshSemuaDataLive();
             } else { toggleApiKeyDropdown(); }
 
-            const orderanLokal = localStorage.getItem("daftar_orderan_srv2_official");
+            const orderanLokal = localStorage.getItem("daftar_orderan_srv2_shopee");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 3000); 
+            setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
         function toggleApiKeyDropdown() {
@@ -152,9 +163,9 @@
                 const d = await apiSMSCode('balance', 'GET');
                 let saldoVal = d.balance || d.amount || 0;
                 document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(saldoVal).toLocaleString("id-ID");
-                printLog("Saldo berhasil diperbarui.");
+                printLog("Saldo berhasil dimuat.");
             } catch(e) {
-                printLog("Gagal memuat saldo.");
+                printLog("Gagal sinkron saldo.");
             }
         }
 
@@ -168,18 +179,36 @@
             btn.innerHTML = `Memproses...`;
 
             try {
-                // Mengirim payload standard pembuatan pesanan nomor virtual khusus Shopee Indonesia
-                const payloadData = {
-                    service: "shopee",
-                    country: "id"
+                // 1. Ambil katalog produk terlebih dahulu untuk mendapatkan ID produk Shopee di Indonesia (country_id=7, platform sesuaikan atau via endpoint catalog/products)
+                printLog("Mencari katalog Shopee ID...");
+                const catalogRes = await apiSMSCode('catalog/products?country_id=7', 'GET');
+                const productsList = catalogRes.data || catalogRes.products || [];
+                
+                // Cari produk yang cocok dengan layanan Shopee
+                let targetProduct = productsList.find(p => p.name && p.name.toLowerCase().includes('shopee'));
+                
+                // Jika tidak ketemu lewat filter nama, ambil produk pertama yang aktif
+                let catalogProductId = targetProduct ? (targetProduct.catalog_product_id || targetProduct.id) : (productsList[0]?.catalog_product_id || productsList[0]?.id || 87);
+
+                // 2. Kirim permintaan order sesuai standar dokumentasi resmi (/orders) menggunakan Idempotency-Key
+                const idempotencyKey = generateIdempotencyKey();
+                const payloadOrder = {
+                    catalog_product_id: parseInt(catalogProductId),
+                    max_price: 15000, // Menggunakan batas harga maksimal IDR sesuai dokumentasi v1
+                    quantity: 1
                 };
 
-                const data = await apiSMSCode('order', 'POST', payloadData);
-                
-                if (data && (data.id || data.order_id || data.phone || data.number)) {
+                const responseData = await apiSMSCode('orders', 'POST', payloadOrder, {
+                    "idempotency-key": idempotencyKey
+                });
+
+                // Respons mengembalikan objek berupa array orders atau data langsung
+                const createdOrder = responseData.data?.orders?.[0] || responseData.orders?.[0] || responseData.data;
+
+                if (createdOrder && (createdOrder.id || createdOrder.order_id || createdOrder.phone_number || createdOrder.phone)) {
                     let orderBaru = { 
-                        order_id: data.id || data.order_id, 
-                        phone: data.phone || data.number, 
+                        order_id: createdOrder.id || createdOrder.order_id, 
+                        phone: createdOrder.phone_number || createdOrder.phone || createdOrder.number, 
                         layanan: "Shopee (Indonesia)", 
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
@@ -188,15 +217,15 @@
                     daftarOrderan.unshift(orderBaru); 
                     renderUILayout(); 
                     simpanDaftarOrderanKeLokal();
-                    printLog(`Nomor aktif didapatkan!`); 
+                    printLog(`Nomor berhasil didapatkan!`); 
                     ambilSaldoLive();
                 } else { 
-                    alert(`Gagal Order: ${data.message || data.error || 'Stok habis / Format ditolak server'}`); 
-                    printLog(`Ditolak server.`);
+                    alert(`Gagal Order: Format respons server tidak dikenali.`); 
+                    printLog(`Error Format Respons.`);
                 }
             } catch (e) { 
-                alert("Gagal terhubung ke endpoint pemesanan SMSCode."); 
-                printLog(`Error jaringan order.`);
+                alert("Gagal memproses pesanan: " + e.message); 
+                printLog(`Error: ${e.message}`);
             } finally { 
                 btn.disabled = false; 
                 btn.innerHTML = teksAsli; 
@@ -206,29 +235,33 @@
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             try {
-                await apiSMSCode(`cancel/${item.order_id}`, 'POST');
+                await apiSMSCode(`orders/${item.order_id}/cancel`, 'POST');
                 item.status = "cancelled"; 
-                showToast("Pesanan Dibatalkan!"); 
+                showToast("Dibatalkan!"); 
                 renderUILayout(); 
                 simpanDaftarOrderanKeLokal(); 
                 await ambilSaldoLive();
-            } catch (e) { alert("Gagal membatalkan pesanan."); }
+            } catch (e) { alert("Gagal membatalkan pesanan: " + e.message); }
         }
 
         async function mesinCekSmsTerpusat() {
             daftarOrderan.forEach(async (i) => {
                 if (i.status !== "pending") return; 
                 try {
-                    const d = await apiSMSCode(`check/${i.order_id}`, 'GET');
-                    if (d.status === "received" || d.status === "success" || d.code || d.sms || d.otp) {
+                    const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
+                    let orderData = d.data || d;
+                    let stat = orderData.status;
+                    let otpCode = orderData.otp_code || orderData.code || orderData.sms;
+
+                    if (stat === "OTP_RECEIVED" || stat === "RECEIVED" || otpCode) {
                         i.status = "received"; 
-                        i.otp = d.code || d.sms || d.otp; 
+                        i.otp = otpCode; 
                         putarSuaraNotif(); 
                         munculkanPopupNative(i.phone, i.otp, i.layanan);
                         renderUILayout(); 
                         simpanDaftarOrderanKeLokal(); 
                         printLog(`🎉 OTP MASUK (${i.otp})!`);
-                    } else if (d.status === "cancelled" || d.status === "timeout") {
+                    } else if (stat === "CANCELLED" || stat === "EXPIRED") {
                         i.status = "cancelled"; 
                         renderUILayout(); 
                         simpanDaftarOrderanKeLokal(); 
@@ -240,7 +273,7 @@
 
         function renderUILayout() {
             const container = document.getElementById("containerListOrder");
-            if (daftarOrderan.length === 0) { container.innerHTML = `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`; return; }
+            if (daftarOrderan.length === 0) { container.innerHTML = `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`; return; }
             let html = ""; let flagSimpan = false;
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
@@ -258,7 +291,7 @@
             container.innerHTML = html; if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
 
-        function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2_official", JSON.stringify(daftarOrderan)); }
+        function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2_shopee", JSON.stringify(daftarOrderan)); }
         function hapusRiwayatSelesai() { daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function printLog(t) { document.getElementById("miniConsoleLog").innerHTML += `<br>└> ${t}`; document.getElementById("miniConsoleLog").scrollTop = 9999; }
