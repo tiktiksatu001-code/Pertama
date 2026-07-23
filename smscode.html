@@ -11,7 +11,7 @@
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
         .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
-        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; }
+        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
         .search-input:focus { border-color: var(--accent-cyan); }
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
@@ -62,16 +62,20 @@
 
         <div>
             <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
-                <span>🔑 Set Bearer Token</span>
+                <span>🔑 Set Bearer Token & Konfigurasi API</span>
                 <span id="panahApiKey" style="font-size: 10px;">▼</span>
             </div>
-            <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 10px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">🔑 Masukkan Bearer Token:</label>
-                <div style="display: flex; margin-top: 4px; gap: 6px;">
-                    <input type="password" id="otpKeyV5" placeholder="Token API" class="search-input">
-                    <button onclick="simpanKeyV5()" style="padding: 8px 10px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
+            <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Bearer Token:</label>
+                <input type="password" id="otpKeyV5" placeholder="Token API" class="search-input">
+                
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; margin-top:6px; display:block;">📡 Rute Katalog API (Opsional):</label>
+                <div style="display: flex; gap: 6px;">
+                    <input type="text" id="customCatalogRoute" placeholder="cth: catalog-products" class="search-input" style="margin-bottom:0;" title="Kosongkan untuk Mode Auto-Discovery">
+                    <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
-                <small id="statusKeyV5" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 4px;">⚠️ Token belum aktif.</small>
+                
+                <small id="statusKeyV5" style="color: var(--text-sub); font-size: 10px; display: block; margin-top: 8px;">*Kosongkan Rute Katalog jika ingin sistem menebak otomatis.</small>
             </div>
         </div>
 
@@ -105,7 +109,7 @@
             </div>
         </div>
 
-        <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
+        <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
             └> Sistem siap (Smart API Mode).
         </div>
     </div>
@@ -116,14 +120,13 @@
         let daftarOrderan = []; 
         let dataKatalogLayanan = [];
 
-        // Fallback statis jika server API benar-benar bermasalah
         const fallbackKatalog = [
             { id: "any", name: "Any", servers: [{ id: 87, name: "Server 1", stock: 886, price: 197 }, { id: 88, name: "Server 2", stock: 420, price: 276 }]},
             { id: "axis", name: "AXIS (XL Axiata)", servers: [{ id: 94, name: "Server 1", stock: 8190, price: 537 }] }
         ];
 
         /* =======================================================================
-           FUNGSI API INTI (SUDAH DIPERBAIKI LOGIKA ERROR-NYA)
+           FUNGSI API INTI (PENANGANAN 404 & CORS YANG LEBIH TANGGUH)
            ======================================================================= */
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
@@ -137,9 +140,9 @@
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
             const proxies = [ 
-                { url: "", encode: false }, // Direct (Langsung tanpa proxy)
-                { url: "https://corsproxy.io/?", encode: true },
-                { url: "https://api.allorigins.win/raw?url=", encode: true }
+                { url: "", encode: false }, // Langsung API (Prioritas 1)
+                { url: "https://api.codetabs.com/v1/proxy?quest=", encode: false }, // Sangat stabil untuk GET
+                { url: "https://corsproxy.io/?", encode: true }
             ];
 
             let networkError = null;
@@ -160,20 +163,16 @@
                     }
                     
                     if (!res.ok) {
-                        // JIKA STATUS BUKAN 200, INI BERARTI KONEKSI SUKSES, TAPI SERVER API MENOLAK.
-                        // Langsung lemparkan error aslinya (misal HTTP 404, HTTP 405), jangan loop proxy lagi!
+                        // Jika 404 Not Found dari peladen asli, langsung lemparkan galat (jangan paksa loop proksi)
                         let msg = data.error?.message || data.message || `Endpoint salah / Ditolak`;
                         throw new Error(`[HTTP ${res.status}] ${msg}`);
                     }
                     
                     return data; 
-
                 } catch (e) { 
-                    // Jika errornya dari server API ([HTTP XXX]), hentikan loop proxy!
                     if (e.message.includes("[HTTP")) {
-                        throw e; 
+                        throw e; // Lemparkan error HTTP murni ke atas
                     }
-                    // Jika Failed to fetch (masalah jaringan/CORS), simpan dan coba proxy berikutnya
                     networkError = e; 
                 }
             }
@@ -182,10 +181,14 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             const savedKey = localStorage.getItem("otp_key_smscode");
+            const savedRoute = localStorage.getItem("otp_custom_route");
+            
             if(savedKey) {
                 document.getElementById("otpKeyV5").value = savedKey;
                 document.getElementById("statusKeyV5").innerText = "✅ Token Aktif.";
                 document.getElementById("statusKeyV5").style.color = "#50fa7b";
+                if(savedRoute) document.getElementById("customCatalogRoute").value = savedRoute;
+                
                 refreshSemuaDataLive();
             }
 
@@ -200,42 +203,53 @@
         });
 
         /* =======================================================================
-           FUNGSI "AUTO-DISCOVER" KATALOG (Cari endpoint yang benar secara otomatis)
+           FUNGSI "AUTO-DISCOVER" (Kini jauh lebih lengkap + Opsi Rute Kustom)
            ======================================================================= */
         async function muatKatalogAsli() {
             try {
-                printLog("🔄 Memulai Auto-Discovery Katalog...");
+                const customRoute = localStorage.getItem("otp_custom_route");
+                let ruteTebakan = [];
                 
-                // Daftar kemungkinan rute endpoint SMSCode
-                const ruteTebakan = ['catalog', 'products', 'services', 'prices'];
+                if (customRoute && customRoute.trim() !== "") {
+                    // Jika pengguna memasukkan rute spesifik, prioritaskan rute tersebut
+                    ruteTebakan = [customRoute.trim()];
+                    printLog(`Mencoba rute kustom pengguna: /v1/${customRoute.trim()}`);
+                } else {
+                    // Jika tidak, gunakan mode tebak pintar
+                    printLog("🔄 Memulai Auto-Discovery Katalog...");
+                    ruteTebakan = [
+                        'catalog-products', 'catalog_products', 'inventory', 'stock', 
+                        'services', 'products', 'catalog', 'prices', 'numbers/available'
+                    ];
+                }
+
                 let itemDitemukan = null;
                 let ruteSukses = "";
 
                 for (let rute of ruteTebakan) {
                     try {
-                        printLog(`Mengecek rute /v1/${rute}...`);
                         const res = await apiSMSCode(rute, 'GET');
-                        let arrData = res.data || res.products || res.services || res.catalog || res.prices || res;
+                        // Cari array datanya dimana pun ia berada
+                        let arrData = res.data || res.products || res.services || res.catalog || res.inventory || res;
                         
                         if (Array.isArray(arrData) && arrData.length > 0) {
                             itemDitemukan = arrData;
                             ruteSukses = rute;
-                            break; // Ketemu! Hentikan pencarian
+                            break; 
                         }
                     } catch(err) {
-                        // Jika 404/405, lanjut coba rute selanjutnya secara diam-diam
+                        // Jangan log semua error 404 agar console tidak penuh
                     }
                 }
 
                 if (!itemDitemukan) {
-                    throw new Error("Semua rute (/catalog, /products, dll) mengembalikan 404 (Not Found).");
+                    throw new Error("Semua kemungkinan rute gagal. Cek dokumentasi API dan isi kolom 'Rute Katalog'.");
                 }
 
-                printLog(`✅ Data katalog berhasil ditarik dari rute /${ruteSukses}!`);
+                printLog(`✅ Sukses tarik katalog dari rute /v1/${ruteSukses}!`);
 
                 let groupedOps = {};
                 itemDitemukan.forEach(item => {
-                    // Coba mendeteksi nama operator, fallback ke "Any"
                     let opName = item.operator || item.network || item.carrier || "Any";
                     if (opName.toLowerCase() === "any") opName = "Any";
                     if (!groupedOps[opName]) groupedOps[opName] = [];
@@ -262,8 +276,8 @@
                 renderMenuLayananApp(dataKatalogLayanan);
 
             } catch (e) {
-                printLog(`⚠️ Auto-Discovery Gagal: ${e.message}`);
-                printLog(`⚠️ Memuat data fallback sementara.`);
+                printLog(`⚠️ Sinkronisasi Gagal: ${e.message}`);
+                printLog(`💡 Menggunakan data fallback. Silakan masukkan rute manual di konfigurasi.`);
                 dataKatalogLayanan = fallbackKatalog;
                 renderMenuLayananApp(dataKatalogLayanan);
             }
@@ -351,12 +365,7 @@
             printLog(`Memesan dari ${fullServiceName} (ID: ${catalogId})...`);
 
             try {
-                const payloadOrder = {
-                    catalog_product_id: catalogId, 
-                    max_price: price, 
-                    quantity: 1
-                };
-
+                const payloadOrder = { catalog_product_id: catalogId, max_price: price, quantity: 1 };
                 const responseData = await apiSMSCode('orders', 'POST', payloadOrder);
                 const createdOrder = responseData.data?.orders?.[0] || responseData.orders?.[0] || responseData.data;
 
@@ -365,24 +374,16 @@
                         order_id: createdOrder.id || createdOrder.order_id, 
                         phone: createdOrder.phone_number || createdOrder.phone || createdOrder.number, 
                         layanan: fullServiceName,
-                        waktu_dibuat: Date.now(), 
-                        status: "pending", 
-                        otp: "" 
+                        waktu_dibuat: Date.now(), status: "pending", otp: "" 
                     };
                     daftarOrderan.unshift(orderBaru); 
-                    renderUILayout(); 
-                    simpanDaftarOrderanKeLokal();
-                    printLog(`🎉 Nomor didapatkan dari ${fullServiceName}!`); 
-                    ambilSaldoLive();
-                } else { 
-                    throw new Error("Respon pesanan ditolak sistem.");
-                }
+                    renderUILayout(); simpanDaftarOrderanKeLokal();
+                    printLog(`🎉 Nomor didapatkan dari ${fullServiceName}!`); ambilSaldoLive();
+                } else { throw new Error("Respon pesanan ditolak sistem."); }
             } catch (e) { 
-                alert("Gagal order:\n" + e.message); 
-                printLog(`Error Order: ${e.message}`);
+                alert("Gagal order:\n" + e.message); printLog(`Error: ${e.message}`);
             } finally { 
-                btnElement.disabled = false; 
-                btnElement.innerHTML = teksAsli; 
+                btnElement.disabled = false; btnElement.innerHTML = teksAsli; 
             }
         }
 
@@ -391,14 +392,20 @@
             w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
         }
 
-        function simpanKeyV5() {
+        function simpanKonfigurasi() {
             const key = document.getElementById("otpKeyV5").value.trim();
+            const route = document.getElementById("customCatalogRoute").value.trim();
             if(!key) return;
+            
             localStorage.setItem("otp_key_smscode", key);
-            document.getElementById("statusKeyV5").innerText = "✅ Token Disimpan!";
+            
+            if (route !== "") localStorage.setItem("otp_custom_route", route);
+            else localStorage.removeItem("otp_custom_route"); // Hapus rute kustom untuk kembali ke mode auto
+            
+            document.getElementById("statusKeyV5").innerText = "✅ Konfigurasi Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
-            refreshSemuaDataLive(); toggleApiKeyDropdown();
-            muatKatalogAsli(); 
+            refreshSemuaDataLive(); 
+            toggleApiKeyDropdown();
         }
 
         function refreshSemuaDataLive() { ambilSaldoLive(); muatKatalogAsli(); }
