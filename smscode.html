@@ -34,9 +34,12 @@
         .btn-pesan-sekarang:hover { opacity: 0.9; }
         .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; box-shadow: none; }
 
-        /* === TAMPILAN HISTORY ORDER === */
+        /* === TAMPILAN HISTORY ORDER DROPDOWN === */
         .history-section { margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px; }
-        .history-item-row { background: #15162c; border: 1px solid #282a52; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; }
+        .history-dropdown-header { background: #181933; border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: var(--accent-cyan); user-select: none; }
+        .history-list-container { display: none; margin-top: 8px; max-height: 300px; overflow-y: auto; background: #15162c; border: 1px solid #282a52; border-radius: 10px; padding: 8px; }
+        .history-list-container.active { display: block; }
+        .history-item-row { background: #121324; border: 1px solid #222448; border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: 11.5px; }
     </style>
 </head>
 <body>
@@ -90,14 +93,14 @@
             </div>
         </div>
 
-        <!-- MENU HISTORY ORDER (BARU) -->
+        <!-- MENU HISTORY ORDER (MODEL DROPDOWN DENGAN WAKTU & TANGGAL) -->
         <div class="history-section">
-            <div style="font-size: 13px; font-weight: bold; color: var(--accent-cyan); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span>📜 History Order (Riwayat):</span>
-                <span onclick="muatHistoryOrderAPI()" style="cursor: pointer; font-size: 10px; color: var(--accent-cyan); background: var(--bg-item); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color);">🔄 Refresh</span>
+            <div class="history-dropdown-header" onclick="toggleHistoryDropdown()">
+                <span>📜 History Order (Riwayat Server)</span>
+                <span id="panahHistory" style="font-size: 10px;">▼</span>
             </div>
-            <div id="containerHistoryList" style="max-height: 220px; overflow-y: auto;">
-                <div style="text-align: center; padding: 15px; color: #6272a4; font-style: italic; font-size: 11px;">Belum memuat riwayat...</div>
+            <div id="containerHistoryList" class="history-list-container">
+                <div style="text-align: center; padding: 15px; color: #6272a4; font-style: italic; font-size: 11px;">Memuat riwayat...</div>
             </div>
         </div>
 
@@ -185,7 +188,8 @@
         async function muatKatalogAnyOnly() {
             try {
                 printLog("🔄 Menarik data server Shopee...");
-                const resProd = await apiSMSCode('catalog/products?country_id=7&limit=50', 'GET');
+                // Ditingkatkan limitnya menjadi 500 agar produk Shopee tidak terlewat
+                const resProd = await apiSMSCode('catalog/products?country_id=7&limit=500', 'GET');
                 let arrData = resProd.data;
                 
                 let shopeeItems = arrData.filter(item => (item.name || "").toLowerCase().includes("shopee"));
@@ -216,7 +220,7 @@
         async function muatHistoryOrderAPI() {
             const container = document.getElementById("containerHistoryList");
             try {
-                const res = await apiSMSCode('orders?limit=15', 'GET');
+                const res = await apiSMSCode('orders?limit=20', 'GET');
                 let orders = res.data;
                 if (!Array.isArray(orders) || orders.length === 0) {
                     container.innerHTML = `<div style="text-align: center; padding: 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat order di server.</div>`;
@@ -226,19 +230,41 @@
                 let html = "";
                 orders.forEach(ord => {
                     let statColor = ord.status === "COMPLETED" || ord.status === "OTP_RECEIVED" ? "#50fa7b" : (ord.status === "ACTIVE" ? "#ffb86c" : "#ff5555");
+                    
+                    // Format Waktu & Tanggal
+                    let tanggalFormat = "-";
+                    if (ord.created_at) {
+                        let d = new Date(ord.created_at);
+                        tanggalFormat = d.toLocaleDateString("id-ID", { day: '2-digit', month: 'short', year: 'numeric' }) + " " + d.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    }
+
                     html += `
                     <div class="history-item-row">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:3px;">
+                        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px;">
                             <span>ID: #${ord.id}</span>
                             <span style="color:${statColor};">${ord.status}</span>
                         </div>
-                        <div style="color:#aaa; margin-bottom:2px;">No: <b>${ord.phone_number || '-'}</b></div>
+                        <div style="color:#aaa; font-size:10px; margin-bottom:3px;">📅 ${tanggalFormat}</div>
+                        <div style="color:#ddd; margin-bottom:2px;">No: <b>${ord.phone_number || '-'}</b></div>
                         <div style="color:var(--accent-cyan);">OTP: <b>${ord.otp_code || 'Belum ada'}</b></div>
                     </div>`;
                 });
                 container.innerHTML = html;
             } catch(e) {
                 container.innerHTML = `<div style="text-align: center; padding: 10px; color: #ff5555; font-size: 11px;">Gagal memuat history.</div>`;
+            }
+        }
+
+        function toggleHistoryDropdown() {
+            const list = document.getElementById("containerHistoryList");
+            const panah = document.getElementById("panahHistory");
+            if (list.classList.contains("active")) {
+                list.classList.remove("active");
+                panah.style.transform = "rotate(0deg)";
+            } else {
+                list.classList.add("active");
+                panah.style.transform = "rotate(180deg)";
+                muatHistoryOrderAPI(); // Refresh otomatis saat dibuka
             }
         }
 
@@ -304,7 +330,7 @@
                     simpanDaftarOrderanKeLokal();
                     printLog(`🎉 Nomor didapatkan: ${createdOrder.phone_number}`); 
                     ambilSaldoLive();
-                    muatHistoryOrderAPI(); // Refresh history otomatis
+                    muatHistoryOrderAPI(); 
                 } else { throw new Error("Respon pesanan ditolak sistem."); }
             } catch (e) { 
                 alert("Gagal order:\n" + e.message); printLog(`Error: ${e.message}`);
