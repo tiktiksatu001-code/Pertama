@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Data Futuristik v3.6</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f0c1b; background: linear-gradient(to bottom, #15102a, #0f0c1b);
+            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; color: #fff;
+        }
+        .container-card { 
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px; padding: 30px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); width: 100%; max-width: 420px; text-align: center; margin-bottom: 20px;
+        }
+        .title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #d6c7ff; letter-spacing: 0.5px; }
+        .form-input { 
+            width: 100%; padding: 16px; margin-bottom: 20px; text-align: center; font-weight: 600; font-size: 15px; 
+            border: 2px solid #3d3463; border-radius: 12px; outline: none; background-color: #1a1535; color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
+        }
+        .btn-group { display: flex; flex-direction: column; gap: 12px; }
+        .btn-primary { 
+            width: 100%; padding: 15px; background: linear-gradient(45deg, #8a2be2, #4a00e0); color: white; 
+            border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+        }
+        #btn-username { background: linear-gradient(45deg, #00b4db, #0083b0); box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4); }
+        .history-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; width: 100%; max-width: 420px; max-height: 200px; overflow-y: auto; margin-top: 10px; }
+        .history-title { font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .config-field { width: 100%; padding: 12px; background: #110d24; border: 1px solid #3d3463; border-radius: 8px; color: #00ffcc; font-family: monospace; font-size: 13px; text-align: center; outline: none; }
+        .btn-admin-control { margin-top: 8px; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
+        .notes-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .btn-refresh-note { background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
+        .btn-refresh-note:hover { background: #3d3463; box-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
+        .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
+        
+        .note-row { 
+            display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+            background: #1a1535; border: 1px solid #3d3463; border-radius: 8px;
+            padding: 10px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden;
+        }
+        .note-row:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.25); transform: translateY(-1px); }
+        .note-row:active { transform: scale(0.98); }
+        .note-row.admin-mode { cursor: default; background: #1e1233; border-color: #ff007f; }
+        .note-num-badge { 
+            background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.3);
+            padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; flex-shrink: 0; user-select: none;
+        }
+        .note-row.admin-mode .note-num-badge { background: rgba(255, 0, 127, 0.15); color: #ff007f; border-color: rgba(255, 0, 127, 0.4); }
+        .note-text-input { 
+            flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px;
+            outline: none; color: #fff; font-size: 14px; padding: 6px 10px; display: block; width: 100%; font-family: inherit;
+        }
+        .note-text-input:focus { background: rgba(0, 0, 0, 0.6); border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
+        .note-display-wrapper { flex: 1; font-size: 14px; word-break: break-all; display: flex; align-items: center; justify-content: space-between; }
+        .text-before-pipe { color: #ffffff; font-weight: 600; }
+        .text-after-pipe { color: #8e85b3; font-style: italic; font-size: 13px; margin-left: 4px; }
+        .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
+        .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
+
+        /* === STYLING MENU TOMBOL SERVER GANDA === */
+        .wrapper-menu-server {
+            width: 100%; max-width: 420px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;
+        }
+        .pemicu-menu-utama {
+            background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; 
+            padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; transition: all 0.2s ease; user-select: none;
+        }
+        .pemicu-menu-utama:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
+        .wadah-iframe-server {
+            display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<!-- === PANEL MENU SERVER 1 & SERVER 2 === -->
+<div class="wrapper-menu-server">
+    <!-- Server 1 -->
+    <div>
+        <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP1', 'panahSrv1')">
+            <span>🛠️ Server 1 (OTP Instan)</span>
+            <span id="panahSrv1">▼</span>
+        </div>
+        <div id="wadahOTP1" class="wadah-iframe-server">
+            <iframe src="otpinstan.html" width="100%" height="700px" style="border: none; display: block;"></iframe>
+        </div>
+    </div>
+
+    <!-- Server 2 -->
+    <div>
+        <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP2', 'panahSrv2')" style="border-color: #008060;">
+            <span>🔵 Server 2 (SMSCode.gg)</span>
+            <span id="panahSrv2">▼</span>
+        </div>
+        <div id="wadahOTP2" class="wadah-iframe-server">
+            <iframe src="smscode.html" width="100%" height="700px" style="border: none; display: block;"></iframe>
+        </div>
+    </div>
+
+    <script>
+        function toggleServerPanel(wadahId, panahId) {
+            const wadah = document.getElementById(wadahId);
+            const panah = document.getElementById(panahId);
+            
+            // Tutup panel lain jika ingin bergantian (opsional, dibiarkan mandiri agar fleksibel)
+            if (wadah.style.display === "none" || wadah.style.display === "") {
+                wadah.style.display = "block";
+                panah.style.transform = "rotate(180deg)";
+            } else {
+                wadah.style.display = "none";
+                panah.style.transform = "rotate(0deg)";
+            }
+        }
+    </script>
+</div>
+<!-- === SELESAI PANEL SERVER === -->
+
+    <div class="container-card">
+        <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator</div>
+        <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
+        <div class="btn-group">
+            <button class="btn-primary" onclick="generateName()"><i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data</button>
+            <button class="btn-primary" id="btn-username" onclick="generateUsername()"><i class="fa-solid fa-user"></i> NaPaSi</button>
+        </div>
+    </div>
+
+    <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 10px;">
+        <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Sinkronisasi Multi-Device</div>
+        
+        <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <div>
+                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
+                <input type="text" id="gitUser" class="config-field" placeholder="bgszp" oninput="saveGitConfig()">
+            </div>
+            <div>
+                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">NAMA REPO WEB</label>
+                <input type="text" id="gitRepo" class="config-field" placeholder="bgszp.github.io" oninput="saveGitConfig()">
+            </div>
+            <div>
+                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB TOKEN (PAT)</label>
+                <input type="password" id="gitToken" class="config-field" placeholder="github_pat_..." oninput="saveGitConfig()">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <div>
+                <div class="notes-header-flex">
+                    <div style="font-size: 13px; font-weight: bold; color: #ff007f; text-align: left;">
+                        <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA (LIVE)
+                        <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Membaca...)</span>
+                    </div>
+                    <button type="button" class="btn-refresh-note" onclick="autoFetchForEveryone()">
+                        <i class="fa-solid fa-rotate"></i> Refresh
+                    </button>
+                </div>
+                <div id="notesContainer" class="notes-list-container"></div>
+                <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
+                    <i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit
+                </button>
+            </div>
+            
+            <div>
+                <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">DATA PENTING / COPAS</div>
+                <textarea id="userNotes2" placeholder="Tempel data acak..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px;" oninput="saveLocalNotes('userNotes2', 'aplikasi_notes_2')"></textarea>
+                <div style="height: 31px;"></div>
+            </div>
+            
+            <div>
+                <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">LAIN-LAIN / TODO</div>
+                <textarea id="userNotes3" placeholder="Info lainnya..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px;" oninput="saveLocalNotes('userNotes3', 'aplikasi_notes_3')"></textarea>
+                <div style="height: 31px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="history-card" style="width: 100%; max-width: 900px; margin-top: 10px;">
+        <div class="history-title"><span>RIWAYAT GENERATOR DATA</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
+        <div id="historyList"></div>
+    </div>
+
+    <div class="toast" id="toastNotif">Berhasil! ✨</div>
+
+    <script>
+        let DATA_DUMMY_DATABASE = [];
+        const ADMIN_PIN = "1234"; 
+        let isAdminAuthenticated = false;
+        let currentFileSha = ""; 
+        let rawNotesLines = [];
+
+        const DEFAULT_USER = "bgszp";
+        const DEFAULT_REPO = "bgszp.github.io";
+
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
+
+            if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = DEFAULT_USER;
+            else document.getElementById("gitUser").value = localStorage.getItem("git_user");
+
+            if(!localStorage.getItem("git_repo")) document.getElementById("gitRepo").value = DEFAULT_REPO;
+            else document.getElementById("gitRepo").value = localStorage.getItem("git_repo");
+
+            if(localStorage.getItem("git_token")) document.getElementById("gitToken").value = localStorage.getItem("git_token");
+            
+            if(localStorage.getItem("aplikasi_notes_2")) document.getElementById("userNotes2").value = localStorage.getItem("aplikasi_notes_2");
+            if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
+
+            autoFetchForEveryone();
+        });
+
+        function saveGitConfig() {
+            localStorage.setItem("git_user", document.getElementById("gitUser").value.trim());
+            localStorage.setItem("git_repo", document.getElementById("gitRepo").value.trim());
+            localStorage.setItem("git_token", document.getElementById("gitToken").value.trim());
+        }
+
+        function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
+
+        function eksekusiSalinTeks(teks) {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(teks);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = teks;
+                textArea.style.position = "fixed"; 
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try { document.execCommand('copy'); } catch (err) {}
+                document.body.removeChild(textArea);
+                return Promise.resolve();
+            }
+        }
+
+        function renderNotesList(fullText) {
+            const container = document.getElementById("notesContainer");
+            container.innerHTML = "";
+            
+            rawNotesLines = fullText.split("\n");
+            if(rawNotesLines.length === 0 || (rawNotesLines.length === 1 && rawNotesLines[0].trim() === "")) { 
+                rawNotesLines = [""]; 
+            }
+
+            rawNotesLines.forEach((text, index) => {
+                const rowNum = index + 1;
+                const rowDiv = document.createElement("div");
+                rowDiv.className = isAdminAuthenticated ? "note-row admin-mode" : "note-row";
+
+                const badge = document.createElement("div");
+                badge.className = "note-num-badge";
+                badge.innerText = `[${rowNum}]`;
+                rowDiv.appendChild(badge);
+
+                if(isAdminAuthenticated) {
+                    const inputField = document.createElement("input");
+                    inputField.type = "text";
+                    inputField.id = `inp-note-${index}`;
+                    inputField.className = "note-text-input";
+                    inputField.value = text;
+                    inputField.placeholder = "Ketik catatan di sini (Enter untuk baris baru)...";
+                    inputField.onkeydown = function(e) {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            insertNewRowAfter(index);
+                        }
+                    };
+                    rowDiv.appendChild(inputField);
+                } else {
+                    const displayWrapper = document.createElement("div");
+                    displayWrapper.className = "note-display-wrapper";
+                    
+                    if(text.includes("|")) {
+                        const parts = text.split("|");
+                        displayWrapper.innerHTML = `<div><span class="text-before-pipe">${parts[0]}</span><span class="text-after-pipe">|${parts.slice(1).join("|")}</span></div>`;
+                    } else {
+                        displayWrapper.innerHTML = `<div><span class="text-before-pipe">${text || '<span style="color:#555;">(Baris Kosong)</span>'}</span></div>`;
+                    }
+                    
+                    displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`;
+                    rowDiv.appendChild(displayWrapper);
+
+                    rowDiv.onclick = function() {
+                        const currentInpValue = text;
+                        if(currentInpValue.trim() !== "") {
+                            let finalCopyText = currentInpValue;
+                            if(currentInpValue.includes("|")) { 
+                                finalCopyText = currentInpValue.split("|")[0].trim(); 
+                            }
+                            if(finalCopyText !== "") {
+                                eksekusiSalinTeks(finalCopyText).then(() => { 
+                                    showToast(`Baris ${rowNum} Disalin! ✨`); 
+                                });
+                            }
+                        }
+                    };
+                }
+                container.appendChild(rowDiv);
+            });
+        }
+
+        function insertNewRowAfter(currentIndex) {
+            let newLines = [];
+            rawNotesLines.forEach((_, idx) => {
+                const el = document.getElementById(`inp-note-${idx}`);
+                newLines.push(el ? el.value : "");
+            });
+            newLines.splice(currentIndex + 1, 0, "");
+            renderNotesList(newLines.join("\n"));
+            const targetInput = document.getElementById(`inp-note-${currentIndex + 1}`);
+            if(targetInput) targetInput.focus();
+        }
+
+        function packInputsToString() {
+            let lineArray = [];
+            rawNotesLines.forEach((_, idx) => {
+                const el = document.getElementById(`inp-note-${idx}`);
+                lineArray.push(el ? el.value : "");
+            });
+            return lineArray.join("\n");
+        }
+
+        async function autoFetchForEveryone() {
+            const statusLabel = document.getElementById("syncStatus");
+            statusLabel.innerText = "(Memantau Live...)";
+            try {
+                const res = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
+                if(res.ok) {
+                    const textData = await res.text();
+                    renderNotesList(textData);
+                    statusLabel.innerText = "(Mode Pantau Aktif)";
+                    statusLabel.style.color = "#00ffcc";
+                    fetchShaQuietly();
+                } else {
+                    renderNotesList("");
+                    statusLabel.innerText = "(Catatan Kosong)";
+                }
+            } catch(e) {
+                statusLabel.innerText = "(Gagal Memuat)";
+                statusLabel.style.color = "#ff4a4a";
+            }
+        }
+
+        async function fetchShaQuietly() {
+            const token = document.getElementById("gitToken").value.trim();
+            const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
+            const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
+            if(!token) return;
+            try {
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
+                    headers: { "Authorization": `token ${token}` }
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    currentFileSha = data.sha;
+                }
+            } catch(e){}
+        }
+
+        async function toggleAdminAccess() {
+            const btnAdmin = document.getElementById("btnAdminAuth");
+            const iconLock = document.getElementById("adminLockIcon");
+            const statusLabel = document.getElementById("syncStatus");
+            const configBox = document.getElementById("adminConfigBox");
+
+            if (!isAdminAuthenticated) {
+                const inputPin = prompt("Masukkan PIN Keamanan Admin:");
+                if (inputPin === ADMIN_PIN) {
+                    isAdminAuthenticated = true;
+                    renderNotesList(rawNotesLines.join("\n"));
+                    configBox.style.display = "grid"; 
+                    btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
+                    btnAdmin.style.background = "#ff007f";
+                    iconLock.className = "fa-solid fa-lock-open";
+                    showToast("Mode Admin Terbuka! 🔓");
+                } else if (inputPin !== null) { alert("PIN Salah! Akses ditolak."); }
+            } else {
+                const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
+                const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
+                const token = document.getElementById("gitToken").value.trim();
+                
+                if(!token) {
+                    alert("Gagal Menyimpan! Isi GITHUB TOKEN terlebih dahulu.");
+                    return;
+                }
+
+                statusLabel.innerText = "(Mengupload...)";
+                btnAdmin.disabled = true;
+
+                const combinedText = packInputsToString();
+                const base64Content = btoa(unescape(encodeURIComponent(combinedText)));
+                const bodyPayload = {
+                    message: "Update live text vertical pipe divider via panel",
+                    content: base64Content
+                };
+
+                await fetchShaQuietly();
+                if(currentFileSha) bodyPayload.sha = currentFileSha;
+
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
+                        method: "PUT",
+                        headers: { 
+                            "Authorization": `token ${token}`, 
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(bodyPayload)
+                    });
+                    if(res.ok) {
+                        const resData = await res.json();
+                        currentFileSha = resData.content.sha;
+                        isAdminAuthenticated = false;
+                        configBox.style.display = "none"; 
+                        btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
+                        btnAdmin.style.background = "#1a1535";
+                        iconLock.className = "fa-solid fa-lock";
+                        statusLabel.innerText = "(Mode Pantau Aktif)";
+                        statusLabel.style.color = "#00ffcc";
+                        showToast("Tersimpan secara Global! ☁️");
+                        renderNotesList(combinedText);
+                    } else { throw new Error(); }
+                } catch(e) {
+                    alert("Gagal memperbarui Cloud. Periksa konfigurasi Token Anda.");
+                    statusLabel.innerText = "(Gagal Menyimpan)";
+                } finally {
+                    btnAdmin.disabled = false;
+                }
+            }
+        }
+
+        window.generateName = function() {
+            if (DATA_DUMMY_DATABASE.length === 0) return;
+            const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
+            const res = `${item.nama}, ${item.alamat}, ${item.no_hp}`;
+            document.getElementById('genNameOutput').value = res;
+            eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
+            tambahKeRiwayat(res);
+        };
+        window.generateUsername = function() {
+            const val = document.getElementById('genNameOutput').value;
+            if (!val) return;
+            const res = val.split(',')[0].trim().replace(/\s+/g, '.').toLowerCase();
+            document.getElementById('genNameOutput').value = res;
+            eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
+            tambahKeRiwayat(res);
+        };
+        function tambahKeRiwayat(t) {
+            const list = document.getElementById('historyList'); const item = document.createElement('div');
+            item.className = 'history-item'; item.innerText = t; 
+            item.onclick = function() { 
+                document.getElementById('genNameOutput').value = t;
+                eksekusiSalinTeks(t).then(() => showToast("Berhasil Disalin! ✨"));
+            };
+            list.insertBefore(item, list.firstChild);
+        }
+        function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
+        function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => { t.classList.remove('show'); }, 2000); }
+    </script>
+</body>
+</html>
+
