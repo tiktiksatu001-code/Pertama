@@ -90,7 +90,6 @@
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
-            // Penambahan Cache-Buster
             const paramSeparator = endpoint.includes('?') ? '&' : '?';
             const targetUrl = `https://api.smscode.gg/v1/${endpoint}${paramSeparator}nocache=${Date.now()}`;
             
@@ -98,26 +97,22 @@
                 "Authorization": `Bearer ${token.trim()}`,
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "Cache-Control": "no-cache",
                 ...customHeaders
             };
 
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            // PERBAIKAN: Tambahkan string kosong ("") di awal array
-            // Ini akan memaksa sistem mencoba koneksi LANGSUNG (Tanpa Proxy) terlebih dahulu
             const proxies = [
-                "", // Urutan 1: Langsung ke API (Paling stabil jika didukung)
-                "https://corsproxy.io/?", // Urutan 2: Proksi cadangan 1
-                "https://api.codetabs.com/v1/proxy?quest=" // Urutan 3: Proksi cadangan 2
+                "", // Urutan 1: Direct API (Tanpa proxy)
+                "https://thingproxy.freeboard.io/fetch/", // Urutan 2: Proxy alternatif
+                "https://corsproxy.io/?" // Urutan 3
             ];
 
             let lastError = null;
 
             for (let proxy of proxies) {
                 try {
-                    // Tentukan eksekusi URL (menggunakan encodeURIComponent hanya untuk corsproxy)
                     let proxyUrl = targetUrl;
                     if (proxy !== "") {
                         proxyUrl = proxy.includes("corsproxy.io") ? proxy + encodeURIComponent(targetUrl) : proxy + targetUrl;
@@ -131,20 +126,20 @@
                         try {
                             data = JSON.parse(textResponse);
                         } catch (err) {
-                            throw new Error("Respon server bukan format JSON.");
+                            throw new Error("Format respons API bukan JSON.");
                         }
                     }
 
                     if (!res.ok) {
-                        throw new Error(data.error?.message || data.message || `Gagal server (HTTP ${res.status})`);
+                        throw new Error(data.error?.message || data.message || `HTTP ${res.status}`);
                     }
-                    return data; // Berhasil! Keluar dari loop proxy
+                    return data; 
                 } catch (e) {
-                    lastError = e; // Simpan pesan error, dan otomatis lanjut ke proxy berikutnya di urutan
+                    lastError = e; 
                 }
             }
             
-            throw new Error("Koneksi gagal di semua proxy: " + (lastError ? lastError.message : "Unknown error"));
+            throw new Error(lastError ? lastError.message : "Unknown error");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -181,12 +176,23 @@
 
         async function ambilSaldoLive() {
             try {
-                const d = await apiSMSCode('balance', 'GET');
-                let saldoVal = d.balance || d.amount || 0;
+                printLog("Mengecek saldo ke server...");
+                const d = await apiSMSCode('balance', 'GET'); 
+                
+                console.log("RAW RESPONS SALDO:", d);
+
+                let saldoVal = 0;
+                if (d.balance !== undefined) saldoVal = d.balance;
+                else if (d.amount !== undefined) saldoVal = d.amount;
+                else if (d.data && d.data.balance !== undefined) saldoVal = d.data.balance;
+                else if (d.data && d.data.amount !== undefined) saldoVal = d.data.amount;
+                else if (d.user && d.user.balance !== undefined) saldoVal = d.user.balance;
+
                 document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(saldoVal).toLocaleString("id-ID");
-                printLog("Saldo berhasil dimuat.");
+                printLog(`Sukses tarik saldo: Rp ${saldoVal}`);
             } catch(e) {
-                printLog("Gagal sinkron saldo.");
+                printLog(`Gagal sinkron saldo: ${e.message}`);
+                document.getElementById("txtSaldoLive").innerText = "Error";
             }
         }
 
