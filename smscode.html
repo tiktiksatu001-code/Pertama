@@ -108,7 +108,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Flexible Catalog Ready.
+            └> Umbrella Catalog Ready.
         </div>
     </div>
     
@@ -187,61 +187,63 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* === TARIK KATALOG FLEKSIBEL (HANYA SHOPEE INDONESIA) === */
+        /* === TARIK KATALOG FLEKSIBEL (UMBRELLA ROUTING) === */
         async function muatKatalogFlexible() {
             try {
-                printLog("🔄 Menarik katalog produk Indonesia (ID 7)...");
+                printLog("🔄 Mencari layanan Shopee ID...");
                 
-                const res = await apiSMSCode('catalog/products?country_id=7&limit=10000', 'GET');
-                let arrData = res.data;
+                // 1. Tarik produk untuk mencari catalog_product_id Shopee
+                const resProd = await apiSMSCode('catalog/products?country_id=7&limit=10000', 'GET');
+                let arrData = resProd.data;
                 
-                if (!Array.isArray(arrData)) {
-                    throw new Error("Format data tidak valid.");
+                let shopeeItems = arrData.filter(item => (item.name || "").toLowerCase().includes("shopee"));
+                if (shopeeItems.length === 0) throw new Error("Layanan Shopee tidak tersedia saat ini.");
+                
+                // Ambil data payung (umbrella) dari item pertama
+                let shopeeBase = shopeeItems[0];
+                let catalogProdId = shopeeBase.catalog_product_id || shopeeBase.id;
+                let basePrice = shopeeBase.price;
+
+                printLog(`✅ Shopee ditemukan (Cat ID: ${catalogProdId}). Mengambil operator...`);
+
+                // 2. Tarik daftar nama operator spesifik dari SMSCode
+                let daftarOperator = [];
+                try {
+                    const resOp = await apiSMSCode('catalog/operators?country_id=7', 'GET');
+                    if (resOp.data && Array.isArray(resOp.data)) {
+                        daftarOperator = resOp.data;
+                    }
+                } catch(e) {
+                    printLog("⚠️ Gagal narik API operator, pakai list bawaan.");
+                    daftarOperator = [
+                        { id: 1, name: "AXIS (XL Axiata)" },
+                        { id: 2, name: "Indosat Ooredoo" },
+                        { id: 5, name: "Telkomsel" },
+                        { id: 3, name: "Three" },
+                        { id: 4, name: "smartfren" }
+                    ];
                 }
 
-                // Saring agar HANYA layanan yang mengandung kata "shopee" yang diambil
-                let hasilFilter = arrData.filter(item => {
-                    let textCek = (item.name || "").toLowerCase();
-                    return textCek.includes("shopee");
-                });
+                // Tambahkan opsi "Any" di paling atas
+                daftarOperator.unshift({ id: null, name: "Any" });
 
-                // Jika filter shopee kosong, biarkan kosong tanpa fallback
-                if (hasilFilter.length === 0) {
-                    printLog("⚠️ Layanan Shopee saat ini sedang tidak tersedia.");
-                } else {
-                    printLog(`✅ Ditemukan ${hasilFilter.length} layanan Shopee.`);
-                }
+                // 3. Susun data untuk UI
+                dataKatalogLayanan = [{
+                    id: 'shopee-id',
+                    name: 'Shopee Indonesia',
+                    servers: daftarOperator.map(op => ({
+                        op_id: op.id,
+                        name: op.name,
+                        stock: "Available",
+                        price: basePrice,
+                        cat_id: catalogProdId
+                    }))
+                }];
 
-                let groupedOps = {};
-                hasilFilter.forEach(item => {
-                    let opName = item.operator_name || item.operator || "Any";
-                    if (!opName || opName.toLowerCase() === "any") opName = "Any";
-                    
-                    if (!groupedOps[opName]) groupedOps[opName] = [];
-                    
-                    groupedOps[opName].push({
-                        id: item.id || item.product_id, 
-                        name: item.name || `Server ${groupedOps[opName].length + 1}`,
-                        stock: item.available || item.stock || 0, 
-                        price: item.price || 0 
-                    });
-                });
-
-                let newKatalog = [];
-                for (let op in groupedOps) {
-                    newKatalog.push({
-                        id: op.toLowerCase().replace(/[^a-z0-9]/g, ''),
-                        name: op,
-                        servers: groupedOps[op].sort((a, b) => a.price - b.price) 
-                    });
-                }
-                
-                newKatalog.sort((a, b) => a.name === "Any" ? -1 : (b.name === "Any" ? 1 : 0));
-                dataKatalogLayanan = newKatalog;
                 renderMenuLayananApp(dataKatalogLayanan);
 
             } catch (e) {
-                printLog(`⚠️ Error Katalog: ${e.message}`);
+                printLog(`⚠️ Error: ${e.message}`);
                 document.getElementById("operatorAccordionContainer").innerHTML = `
                 <div style="padding: 20px; text-align: center; color: #e11d48; font-size: 13px;">
                     Gagal memuat katalog: ${e.message}
@@ -269,7 +271,7 @@
                             <div class="op-dot" style="background: ${dotColor}; box-shadow: 0 0 4px ${shadowColor};"></div>
                             <div>
                                 <div class="op-title">${op.name}</div>
-                                <div class="op-sub">${isAvailable ? 'Available' : 'Out of stock'}</div>
+                                <div class="op-sub">${isAvailable ? 'Tersedia' : 'Kosong'}</div>
                             </div>
                         </div>
                         <i class="fa-solid fa-chevron-down" id="icon-op-${op.id}" style="color: #cbd5e1; font-size: 14px; transition: transform 0.3s ease;"></i>
@@ -313,29 +315,32 @@
                         <div class="op-dot" style="background: #a3e635; box-shadow: 0 0 4px rgba(163, 230, 53, 0.5);"></div>
                         <div>
                             <div class="srv-title">${srv.name}</div>
-                            <div class="srv-stock">${parseInt(srv.stock).toLocaleString('id-ID')} available</div>
+                            <div class="srv-stock">${srv.stock}</div>
                         </div>
                     </div>
                     <div class="srv-right">
                         <div class="srv-price"><i class="fa-solid fa-circle-dollar-to-slot coin-icon"></i> ${parseInt(srv.price).toLocaleString('id-ID')}</div>
-                        <button class="btn-buy-app" id="btn-buy-${srv.id}" onclick="eksekusiBeliServer(this, ${srv.id}, ${srv.price}, '${op.name} - ${srv.name}')">Buy</button>
+                        <button class="btn-buy-app" onclick="eksekusiBeliUmbrella(this, ${srv.cat_id}, ${srv.op_id}, '${op.name} - ${srv.name}')">Buy</button>
                     </div>
                 </div>`;
             });
             listEl.innerHTML = html;
         }
 
-        async function eksekusiBeliServer(btnElement, productId, price, fullServiceName) {
+        async function eksekusiBeliUmbrella(btnElement, catId, opId, fullServiceName) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) { alert("Sila atur Bearer Token Anda!"); toggleApiKeyDropdown(); return; }
 
             const teksAsli = btnElement.innerHTML; 
             btnElement.disabled = true; 
             btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
-            printLog(`Memesan dari ${fullServiceName}...`);
+            printLog(`Memesan ${fullServiceName}...`);
 
             try {
-                const payloadOrder = { product_id: productId, quantity: 1 };
+                // Konfigurasi ID Payung & ID Operator Opsional
+                const payloadOrder = { catalog_product_id: catId, quantity: 1 };
+                if (opId !== null) { payloadOrder.operator_id = opId; }
+
                 const responseData = await apiSMSCode('orders/create', 'POST', payloadOrder);
                 const createdOrder = responseData.data?.orders?.[0];
 
@@ -411,7 +416,7 @@
                         putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
                         renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
                     } else if (stat === "CANCELED" || stat === "CANCELLED" || stat === "EXPIRED" || stat === "REFUNDED") {
-                        i.status = "cancelled"; renderUILayout(); simpanDaffarOrderanKeLokal(); ambilSaldoLive();
+                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                     }
                 } catch (e) {}
             });
