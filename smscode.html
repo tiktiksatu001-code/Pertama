@@ -83,20 +83,20 @@
         let daftarOrderan = []; 
         let saldoSekarangGlobal = 0;
 
-        async function apiSMSCode(endpoint, method = "GET", queryParams = "") {
+        async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("API Key belum disetting.");
 
-            let targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
-            if (queryParams) targetUrl += `?${queryParams}`;
-
+            const targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
             let options = {
                 method: method,
                 headers: {
                     "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
                     "Accept": "application/json"
                 }
             };
+            if (payload) options.body = JSON.stringify(payload);
 
             const gateways = [
                 "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
@@ -166,8 +166,8 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                // Menggunakan parameter query URL standar untuk pemesanan (service=shopee&country=id)
-                const data = await apiSMSCode('order', 'GET', 'service=shopee&country=id');
+                // Diperbarui: Mengirim body JSON standar POST { "service": "shopee", "country": "id" } sesuai API standar
+                const data = await apiSMSCode('order', 'POST', { service: "shopee", country: "id" });
                 
                 if (data.id || data.order_id || data.phone || data.number || data.status === "success" || data.success === true) {
                     let orderBaru = { 
@@ -196,7 +196,7 @@
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             try {
-                await apiSMSCode(`cancel/${item.order_id}`, 'GET');
+                await apiSMSCode(`cancel/${item.order_id}`, 'POST');
                 item.status = "cancelled"; showToast("Dibatalkan!"); renderUILayout(); simpanDaftarOrderanKeLokal(); await ambilSaldoLive();
             } catch (e) { alert("Gagal membatalkan pesanan."); }
         }
