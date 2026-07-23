@@ -13,9 +13,6 @@
         .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; }
         .search-input:focus { border-color: var(--accent-cyan); }
-        .btn-pesan-premium { width: 100%; padding: 12px; background: #008060; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; margin-top: 12px; box-shadow: 0 4px 12px rgba(0, 128, 96, 0.4); }
-        .btn-pesan-premium:hover:not(:disabled) { background: #00b386; }
-        .btn-pesan-premium:disabled { background: #44475a !important; color: #888 !important; cursor: not-allowed !important; }
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
@@ -24,19 +21,46 @@
         .btn-batal { background: var(--accent-red); color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        /* === GAYA UI APLIKASI NATIVE === */
+        .app-ui-container { background: #ffffff; border-radius: 16px; padding: 12px; margin-top: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .app-header-nav { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px 15px 10px; border-bottom: 1px solid #f1f5f9; }
+        .app-header-left { display: flex; align-items: center; gap: 15px; }
+        .app-header-text { line-height: 1.3; }
+        .operator-item { border-bottom: 1px solid #f1f5f9; background: #ffffff; border-radius: 12px; margin-bottom: 5px; }
+        .operator-header { padding: 14px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-radius: 12px; transition: background 0.2s; }
+        .operator-header:hover { background: #f8fafc; }
+        .op-info { display: flex; align-items: center; gap: 12px; }
+        .op-dot { width: 10px; height: 10px; background: #a3e635; border-radius: 50%; box-shadow: 0 0 4px rgba(163, 230, 53, 0.5); }
+        .op-title { font-weight: 600; font-size: 14px; color: #1e293b; }
+        .op-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .server-list { display: none; background: #ffffff; padding: 0; border-top: 1px solid #f1f5f9; border-radius: 0 0 12px 12px; overflow-y: auto; max-height: 350px; }
+        .server-list.active { display: block; }
+        .server-row { padding: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f8fafc; }
+        .server-row:last-child { border-bottom: none; }
+        .srv-left { display: flex; align-items: center; gap: 12px; }
+        .srv-title { font-weight: 600; font-size: 13.5px; color: #334155; }
+        .srv-stock { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .srv-right { display: flex; align-items: center; gap: 14px; }
+        .srv-price { font-weight: 700; font-size: 14px; color: #1e293b; display: flex; align-items: center; gap: 5px; }
+        .coin-icon { color: #fbbf24; font-size: 15px; }
+        .btn-buy-app { background: #3b82f6; color: #ffffff; border: none; padding: 6px 18px; border-radius: 20px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); }
+        .btn-buy-app:hover { background: #2563eb; transform: scale(0.98); }
+        .btn-buy-app:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+        /* ============================================== */
     </style>
 </head>
 <body>
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Server 2 (SMSCode - Shopee ID)</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Server 2 (SMSCode.gg)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
             </div>
         </div>
 
-        <div style="margin-bottom: 12px;">
+        <div>
             <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
                 <span>🔑 Set Bearer Token</span>
                 <span id="panahApiKey" style="font-size: 10px;">▼</span>
@@ -51,16 +75,27 @@
             </div>
         </div>
 
-        <div>
-            <label style="font-size: 12px; color: var(--text-sub); display: block; margin-bottom: 4px;">Layanan Terpilih</label>
-            <div class="pemicu-dropdown" style="background: #1e2042; border-color: #008060; cursor: default;">
-                <span id="txtLayananTerpilihHeader" style="font-size: 12px; color: #00ffcc; font-weight: bold;">Shopee (Indonesia) — Siap Order</span>
+        <!-- UI APLIKASI NATIVE LAYANAN -->
+        <div class="app-ui-container">
+            <div class="app-header-nav">
+                <div class="app-header-left">
+                    <i class="fa-solid fa-chevron-left" style="color:#0f172a; font-size: 16px; cursor: pointer;"></i>
+                    <div class="app-header-text">
+                        <div style="font-weight: 700; font-size: 16px; color: #0f172a; letter-spacing: -0.3px;">Indonesia</div>
+                        <div style="font-size: 12px; color: #64748b;">Shopee · Select an operator</div>
+                    </div>
+                </div>
+                <!-- Tombol Refresh Katalog Khusus -->
+                <i class="fa-solid fa-rotate-right" onclick="muatKatalogAsli()" style="color: #3b82f6; font-size: 16px; cursor: pointer; padding: 5px;" title="Refresh Katalog"></i>
             </div>
-            
-            <button onclick="prosesPesanSekarang()" class="btn-pesan-premium" id="btnPesanUtama">
-                <i class="fa-solid fa-cart-shopping" style="margin-right:5px;"></i> Pesan Sekarang
-            </button>
+            <div id="operatorAccordionContainer" style="margin-top: 10px;">
+                <div style="padding: 30px; text-align: center; color: #94a3b8;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #3b82f6;"></i>
+                    <div style="margin-top: 10px; font-size: 13px;">Memuat Server...</div>
+                </div>
+            </div>
         </div>
+        <!-- ========================================= -->
 
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
@@ -73,7 +108,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
-            └> Server 2 (Shopee Mode) Ready.
+            └> Sistem siap (Live API Mode).
         </div>
     </div>
     
@@ -81,66 +116,45 @@
 
     <script>
         let daftarOrderan = []; 
+        let dataKatalogLayanan = [];
+
+        // Data cadangan jika API server error atau terblokir sementara
+        const fallbackKatalog = [
+            { id: "any", name: "Any", servers: [
+                { id: 87, name: "Server 1", stock: 886, price: 197 }, { id: 88, name: "Server 2", stock: 420, price: 276 }
+            ]},
+            { id: "axis", name: "AXIS (XL Axiata)", servers: [{ id: 94, name: "Server 1", stock: 8190, price: 537 }] }
+        ];
 
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
             let targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
+            if (method === "GET") { targetUrl += (endpoint.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; }
             
-            if (method === "GET") {
-                const paramSeparator = endpoint.includes('?') ? '&' : '?';
-                targetUrl += `${paramSeparator}nocache=${Date.now()}`;
-            }
-            
-            // Header super bersih (tanpa custom header aneh-aneh) agar lolos CORS
-            let headers = {
-                "Authorization": `Bearer ${token.trim()}`,
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            };
-
+            let headers = { "Authorization": `Bearer ${token.trim()}`, "Content-Type": "application/json", "Accept": "application/json" };
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            const proxies = [
-                "", // Urutan 1: Direct API (Prioritas utama)
-                "https://corsproxy.io/?", // Urutan 2: Proxy standar
-                "https://api.allorigins.win/raw?url=" // Urutan 3: Proxy cadangan tangguh
-            ];
-
+            const proxies = [ "", "https://corsproxy.io/?", "https://api.allorigins.win/raw?url=" ];
             let lastError = null;
 
             for (let proxy of proxies) {
                 try {
                     let proxyUrl = targetUrl;
-                    if (proxy !== "") {
-                        // PERBAIKAN: Tidak menggunakan encodeURIComponent untuk corsproxy.io karena merusak HTTP Method
-                        proxyUrl = proxy.includes("corsproxy.io") ? proxy + targetUrl : proxy + encodeURIComponent(targetUrl);
-                    }
-                    
+                    if (proxy !== "") { proxyUrl = proxy.includes("corsproxy.io") ? proxy + targetUrl : proxy + encodeURIComponent(targetUrl); }
                     const res = await fetch(proxyUrl, options);
                     const textResponse = await res.text();
-                    
                     let data = {};
                     if (textResponse && textResponse.trim() !== "") {
-                        try {
-                            data = JSON.parse(textResponse);
-                        } catch (err) {
-                            throw new Error("Format respons API bukan JSON.");
-                        }
+                        try { data = JSON.parse(textResponse); } catch (err) { throw new Error("Bukan JSON."); }
                     }
-
-                    if (!res.ok) {
-                        throw new Error(data.error?.message || data.message || `HTTP ${res.status}`);
-                    }
+                    if (!res.ok) throw new Error(data.error?.message || data.message || `HTTP ${res.status}`);
                     return data; 
-                } catch (e) {
-                    lastError = e; 
-                }
+                } catch (e) { lastError = e; }
             }
-            
-            throw new Error(lastError ? lastError.message : "Koneksi gagal di semua rute proxy.");
+            throw new Error(lastError ? lastError.message : "Gagal koneksi.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -150,14 +164,195 @@
                 document.getElementById("statusKeyV5").innerText = "✅ Token Aktif.";
                 document.getElementById("statusKeyV5").style.color = "#50fa7b";
                 refreshSemuaDataLive();
-            } else { toggleApiKeyDropdown(); }
+            }
 
             const orderanLokal = localStorage.getItem("daftar_orderan_srv2_shopee");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
+            // Trigger penarikan data katalog live saat halaman pertama kali dimuat
+            if(savedKey) muatKatalogAsli();
+            else renderMenuLayananApp(fallbackKatalog);
+
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
+
+        /* === FUNGSI SINKRONISASI KATALOG LIVE DARI SERVER === */
+        async function muatKatalogAsli() {
+            try {
+                printLog("🔄 Mengambil data katalog live dari server...");
+                
+                // Endpoint SMSCode.gg untuk layanan. Bisa 'products', 'services', atau 'catalog'.
+                // Jika error, coba ganti 'products' ke 'services' sesuai dokumentasi SMSCode Anda.
+                const res = await apiSMSCode('products'); 
+                let items = res.data || res.products || res.catalog || res;
+
+                if (Array.isArray(items) && items.length > 0) {
+                    let groupedOps = {};
+                    
+                    items.forEach(item => {
+                        // Mem-filter jika layanan tersebut bukan untuk Shopee Indonesia (Optional)
+                        // if(item.service_name && !item.service_name.toLowerCase().includes('shopee')) return;
+
+                        // Mencoba mendeteksi nama operator dari response JSON
+                        let opName = item.operator || item.network || item.carrier || "Any";
+                        if (opName.toLowerCase() === "any") opName = "Any";
+                        
+                        if (!groupedOps[opName]) groupedOps[opName] = [];
+                        
+                        groupedOps[opName].push({
+                            id: item.id || item.catalog_product_id || item.product_id,
+                            name: item.name || item.server_name || `Server ${groupedOps[opName].length + 1}`,
+                            stock: item.stock || item.available || item.qty || 0,
+                            price: item.price || item.cost || item.rate || 0
+                        });
+                    });
+
+                    // Konversi Object ke struktur Array Katalog
+                    let newKatalog = [];
+                    for (let op in groupedOps) {
+                        newKatalog.push({
+                            id: op.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                            name: op,
+                            // Urutkan harga server dari yang termurah ke termahal
+                            servers: groupedOps[op].sort((a, b) => a.price - b.price) 
+                        });
+                    }
+                    
+                    // Pastikan kategori "Any" (Semua Jaringan) berada paling atas
+                    newKatalog.sort((a, b) => a.name === "Any" ? -1 : (b.name === "Any" ? 1 : 0));
+                    
+                    dataKatalogLayanan = newKatalog;
+                    renderMenuLayananApp(dataKatalogLayanan);
+                    printLog("✅ Katalog live berhasil disinkronkan!");
+                } else {
+                    throw new Error("Respon kosong");
+                }
+            } catch (e) {
+                printLog(`⚠️ Gagal tarik katalog live (${e.message}). Memakai fallback.`);
+                dataKatalogLayanan = fallbackKatalog;
+                renderMenuLayananApp(dataKatalogLayanan);
+            }
+        }
+        /* ==================================================== */
+
+        /* === FUNGSI RENDER ANTARMUKA APLIKASI === */
+        function renderMenuLayananApp(katalogData) {
+            const container = document.getElementById("operatorAccordionContainer");
+            let html = "";
+            katalogData.forEach(op => {
+                let isAvailable = op.servers.length > 0;
+                let dotColor = isAvailable ? "#a3e635" : "#cbd5e1";
+                let shadowColor = isAvailable ? "rgba(163, 230, 53, 0.5)" : "transparent";
+                
+                html += `
+                <div class="operator-item">
+                    <div class="operator-header" onclick="toggleMenuLayanan('${op.id}')">
+                        <div class="op-info">
+                            <div class="op-dot" style="background: ${dotColor}; box-shadow: 0 0 4px ${shadowColor};"></div>
+                            <div>
+                                <div class="op-title">${op.name}</div>
+                                <div class="op-sub">${isAvailable ? 'Available' : 'Out of stock'}</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" id="icon-op-${op.id}" style="color: #cbd5e1; font-size: 14px; transition: transform 0.3s ease;"></i>
+                    </div>
+                    <div class="server-list" id="list-op-${op.id}"></div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleMenuLayanan(opId) {
+            document.querySelectorAll('.server-list').forEach(el => { if(el.id !== `list-op-${opId}`) el.classList.remove('active'); });
+            document.querySelectorAll('.fa-chevron-down').forEach(el => { if(el.id !== `icon-op-${opId}`) el.style.transform = "rotate(0deg)"; });
+
+            const listEl = document.getElementById(`list-op-${opId}`);
+            const iconEl = document.getElementById(`icon-op-${opId}`);
+
+            if (listEl.classList.contains('active')) {
+                listEl.classList.remove('active');
+                iconEl.style.transform = "rotate(0deg)";
+            } else {
+                listEl.classList.add('active');
+                iconEl.style.transform = "rotate(180deg)";
+                listEl.innerHTML = `<div style="text-align: center; padding: 25px;"><i class="fa-solid fa-spinner fa-spin" style="color: #3b82f6; font-size: 22px;"></i></div>`;
+                setTimeout(() => { renderIsiServerMenu(opId, listEl); }, 250); 
+            }
+        }
+
+        function renderIsiServerMenu(opId, listEl) {
+            const op = dataKatalogLayanan.find(o => o.id === opId);
+            if(!op || op.servers.length === 0) {
+                listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px; font-weight: 500;">No servers available at the moment.</div>`;
+                return;
+            }
+            
+            let html = "";
+            op.servers.forEach(srv => {
+                html += `
+                <div class="server-row">
+                    <div class="srv-left">
+                        <div class="op-dot" style="background: #a3e635; box-shadow: 0 0 4px rgba(163, 230, 53, 0.5);"></div>
+                        <div>
+                            <div class="srv-title">${srv.name}</div>
+                            <div class="srv-stock">${parseInt(srv.stock).toLocaleString('id-ID')} available</div>
+                        </div>
+                    </div>
+                    <div class="srv-right">
+                        <div class="srv-price"><i class="fa-solid fa-circle-dollar-to-slot coin-icon"></i> ${parseInt(srv.price).toLocaleString('id-ID')}</div>
+                        <button class="btn-buy-app" id="btn-buy-${srv.id}" onclick="eksekusiBeliServer(this, ${srv.id}, ${srv.price}, '${op.name} - ${srv.name}')">Buy</button>
+                    </div>
+                </div>`;
+            });
+            listEl.innerHTML = html;
+        }
+
+        async function eksekusiBeliServer(btnElement, catalogId, price, fullServiceName) {
+            const token = localStorage.getItem("otp_key_smscode");
+            if (!token) { alert("Sila atur Bearer Token Anda!"); toggleApiKeyDropdown(); return; }
+
+            const teksAsli = btnElement.innerHTML; 
+            btnElement.disabled = true; 
+            btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            printLog(`Memesan dari ${fullServiceName} (ID: ${catalogId})...`);
+
+            try {
+                const payloadOrder = {
+                    catalog_product_id: catalogId, // Asumsi key ini valid sesuai API SMSCode
+                    max_price: price, 
+                    quantity: 1
+                };
+
+                const responseData = await apiSMSCode('orders', 'POST', payloadOrder);
+                const createdOrder = responseData.data?.orders?.[0] || responseData.orders?.[0] || responseData.data;
+
+                if (createdOrder && (createdOrder.id || createdOrder.order_id || createdOrder.phone_number || createdOrder.phone)) {
+                    let orderBaru = { 
+                        order_id: createdOrder.id || createdOrder.order_id, 
+                        phone: createdOrder.phone_number || createdOrder.phone || createdOrder.number, 
+                        layanan: fullServiceName,
+                        waktu_dibuat: Date.now(), 
+                        status: "pending", 
+                        otp: "" 
+                    };
+                    daftarOrderan.unshift(orderBaru); 
+                    renderUILayout(); 
+                    simpanDaftarOrderanKeLokal();
+                    printLog(`🎉 Nomor didapatkan dari ${fullServiceName}!`); 
+                    ambilSaldoLive();
+                } else { 
+                    throw new Error("Respon pesanan ditolak sistem.");
+                }
+            } catch (e) { 
+                alert("Gagal order:\n" + e.message); 
+                printLog(`Error: ${e.message}`);
+            } finally { 
+                btnElement.disabled = false; 
+                btnElement.innerHTML = teksAsli; 
+            }
+        }
+        /* ================================================= */
 
         function toggleApiKeyDropdown() {
             const w = document.getElementById("wadahApiKeyDropdown");
@@ -166,20 +361,19 @@
 
         function simpanKeyV5() {
             const key = document.getElementById("otpKeyV5").value.trim();
-            if(!key) { alert("Masukkan Token!"); return; }
+            if(!key) return;
             localStorage.setItem("otp_key_smscode", key);
             document.getElementById("statusKeyV5").innerText = "✅ Token Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
             refreshSemuaDataLive(); toggleApiKeyDropdown();
+            muatKatalogAsli(); // Tarik katalog pasca input token
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); }
+        function refreshSemuaDataLive() { ambilSaldoLive(); muatKatalogAsli(); }
 
         async function ambilSaldoLive() {
             try {
-                printLog("Mengecek saldo ke server...");
                 const d = await apiSMSCode('balance', 'GET'); 
-                
                 let saldoVal = 0;
                 if (d.balance !== undefined) saldoVal = d.balance;
                 else if (d.amount !== undefined) saldoVal = d.amount;
@@ -188,62 +382,7 @@
                 else if (d.user && d.user.balance !== undefined) saldoVal = d.user.balance;
 
                 document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(saldoVal).toLocaleString("id-ID");
-                printLog(`Sukses tarik saldo: Rp ${saldoVal}`);
-            } catch(e) {
-                printLog(`Gagal sinkron saldo: ${e.message}`);
-                document.getElementById("txtSaldoLive").innerText = "Error";
-            }
-        }
-
-        async function prosesPesanSekarang() {
-            const token = localStorage.getItem("otp_key_smscode");
-            if (!token) { alert("Masukkan Bearer Token terlebih dahulu!"); toggleApiKeyDropdown(); return; }
-
-            const btn = document.getElementById("btnPesanUtama");
-            const teksAsli = btn.innerHTML; 
-            btn.disabled = true; 
-            btn.innerHTML = `Memproses...`;
-
-            try {
-                const catalogProductId = 87; 
-
-                printLog(`Membuat pesanan Shopee (Katalog ID: ${catalogProductId})...`);
-                
-                // PERBAIKAN: Payload yang lebih sederhana, membuang custom header (idempotency-key) dari fetch.
-                const payloadOrder = {
-                    catalog_product_id: catalogProductId,
-                    max_price: 15000, 
-                    quantity: 1
-                };
-
-                const responseData = await apiSMSCode('orders', 'POST', payloadOrder);
-
-                const createdOrder = responseData.data?.orders?.[0] || responseData.orders?.[0] || responseData.data;
-
-                if (createdOrder && (createdOrder.id || createdOrder.order_id || createdOrder.phone_number || createdOrder.phone)) {
-                    let orderBaru = { 
-                        order_id: createdOrder.id || createdOrder.order_id, 
-                        phone: createdOrder.phone_number || createdOrder.phone || createdOrder.number, 
-                        layanan: "Shopee (Indonesia)", 
-                        waktu_dibuat: Date.now(), 
-                        status: "pending", 
-                        otp: "" 
-                    };
-                    daftarOrderan.unshift(orderBaru); 
-                    renderUILayout(); 
-                    simpanDaftarOrderanKeLokal();
-                    printLog(`Nomor berhasil didapatkan!`); 
-                    ambilSaldoLive();
-                } else { 
-                    throw new Error("Format respons server pemesanan tidak dikenali.");
-                }
-            } catch (e) { 
-                alert("Gagal memproses pesanan:\n" + e.message); 
-                printLog(`Error Order: ${e.message}`);
-            } finally { 
-                btn.disabled = false; 
-                btn.innerHTML = teksAsli; 
-            }
+            } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
         }
 
         async function eksekusiBatalkanServer(index) {
@@ -252,10 +391,8 @@
                 await apiSMSCode(`orders/${item.order_id}/cancel`, 'POST');
                 item.status = "cancelled"; 
                 showToast("Dibatalkan!"); 
-                renderUILayout(); 
-                simpanDaftarOrderanKeLokal(); 
-                await ambilSaldoLive();
-            } catch (e) { alert("Gagal membatalkan: " + e.message); }
+                renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
+            } catch (e) { alert("Gagal membatalkan."); }
         }
 
         async function mesinCekSmsTerpusat() {
@@ -268,18 +405,11 @@
                     let otpCode = orderData.otp_code || orderData.code || orderData.sms;
 
                     if (stat === "OTP_RECEIVED" || stat === "RECEIVED" || otpCode) {
-                        i.status = "received"; 
-                        i.otp = otpCode; 
-                        putarSuaraNotif(); 
-                        munculkanPopupNative(i.phone, i.otp, i.layanan);
-                        renderUILayout(); 
-                        simpanDaftarOrderanKeLokal(); 
-                        printLog(`🎉 OTP MASUK (${i.otp})!`);
+                        i.status = "received"; i.otp = otpCode; 
+                        putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
+                        renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
                     } else if (stat === "CANCELLED" || stat === "EXPIRED" || stat === "REFUNDED") {
-                        i.status = "cancelled"; 
-                        renderUILayout(); 
-                        simpanDaftarOrderanKeLokal(); 
-                        ambilSaldoLive();
+                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                     }
                 } catch (e) {}
             });
