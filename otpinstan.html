@@ -13,7 +13,7 @@
         .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
         .pemicu-dropdown:hover { background: #1e2042; }
         .wrapper-layanan { background: var(--bg-item); border: 1px solid #32356b; border-top: none; border-radius: 0 0 12px 12px; overflow: hidden; margin-top: -1px; display: none; position: relative; z-index: 10; }
-        .search-box-container { padding: 10px; background: #15102a; border-bottom: 1px solid #2c2e5c; position: sticky; top: 0; z-index: 11; }
+        .search-box-container { padding: 10px; background: #15102a; border-bottom: 1px solid #2c2e5c; position: sticky; top: 0; z-index: 11; display: flex; gap: 8px; }
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; }
         .search-input:focus { border-color: var(--accent-cyan); }
         .scrollable-list { max-height: 220px; overflow-y: auto; }
@@ -36,14 +36,16 @@
 </head>
 <body>
     <div class="container">
+        <!-- Bagian Saldo & Server -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
             <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">📱 Server 1 (OTP Instan)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
-                <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
+                <span onclick="ambilSaldoLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
             </div>
         </div>
 
+        <!-- Bagian Konfigurasi API Key -->
         <div style="margin-bottom: 12px;">
             <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
                 <span>🔑 Konfigurasi API Key</span>
@@ -52,25 +54,27 @@
             <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 10px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
                 <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">🔑 Masukkan API Key:</label>
                 <div style="display: flex; margin-top: 4px; gap: 6px;">
-                    <input type="password" id="otpKeyV5" placeholder="Token API Key" class="search-input">
+                    <input type="password" id="otpKeyV5" placeholder="Mulai dengan otpk_..." class="search-input">
                     <button onclick="simpanKeyV5()" style="padding: 8px 10px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
                 <small id="statusKeyV5" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 4px;">⚠️ API Key belum aktif.</small>
             </div>
         </div>
 
+        <!-- Bagian Pilih Layanan -->
         <div>
             <label style="font-size: 12px; color: var(--text-sub); display: block; margin-bottom: 4px;">Pilih Layanan</label>
             <div class="pemicu-dropdown" id="btnTriggerDropdown" onclick="toggleMekanismeDropdown()">
-                <span id="txtLayananTerpilihHeader" style="font-size: 12px;">Menghubungkan server...</span>
+                <span id="txtLayananTerpilihHeader" style="font-size: 12px;">Pilih layanan...</span>
                 <span id="ikonPanahDropdown" style="font-size: 10px;">▼</span>
             </div>
             <div class="wrapper-layanan" id="boxLayananShopee">
                 <div class="search-box-container">
-                    <input type="text" id="cariLayanan" class="search-input" placeholder="Cari layanan..." value="Shope" onkeyup="renderDaftarLayanan()">
+                    <input type="text" id="cariLayanan" class="search-input" placeholder="Cari layanan (ex: Shopee)..." value="Shope" onkeyup="renderDaftarLayanan()">
+                    <button id="btnRefreshLayanan" onclick="ambilLayananLive()" style="background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); border-radius: 8px; padding: 0 12px; cursor: pointer; font-size: 14px;" title="Refresh Layanan Live">🔄</button>
                 </div>
                 <div id="listLayananRender" class="scrollable-list">
-                    <div style="text-align: center; padding: 15px; color: #6272a4; font-size: 12px; font-style: italic;">Memuat data...</div>
+                    <div style="text-align: center; padding: 15px; color: #6272a4; font-size: 12px; font-style: italic;">Memuat data dari server...</div>
                 </div>
             </div>
             
@@ -79,6 +83,7 @@
             </button>
         </div>
 
+        <!-- Bagian Nomor & OTP Aktif -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
@@ -89,7 +94,7 @@
             </div>
         </div>
 
-        <!-- Fitur Riwayat Lengkap -->
+        <!-- Bagian Riwayat Lengkap -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div class="pemicu-dropdown" onclick="toggleRiwayatDropdown()">
                 <span>📜 Riwayat Orderan Lengkap</span>
@@ -102,8 +107,9 @@
             </div>
         </div>
 
+        <!-- Console Log -->
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
-            └> Server 1 Ready.
+            └> Server 1 Ready. (Docs V2 Applied)
         </div>
     </div>
     
@@ -111,29 +117,49 @@
 
     <script>
         let daftarOrderan = []; 
-        let riwayatLengkap = []; // Array terpisah untuk riwayat utuh
-        let saldoSekarangGlobal = 0;
+        let riwayatLengkap = []; 
         let globalListLayanan = []; 
         let idLayananTerpilih = null;
         let namaLayananTerpilih = "";
         let hargaLayananTerpilih = 0;
 
-        async function fetchSmartProxy(targetUrl, isPost = false, postBody = null) {
-            const isStateChanging = targetUrl.includes("order.php") || targetUrl.includes("cancel.php");
-            const proxies = isStateChanging ? ["https://corsproxy.io/?", "https://api.codetabs.com/v1/proxy?quest="] : ["", "https://corsproxy.io/?", "https://api.codetabs.com/v1/proxy?quest="];
-            let options = { method: isPost ? "POST" : "GET" };
-            if (isPost && postBody) {
-                options.headers = { "Content-Type": "application/x-www-form-urlencoded" };
-                options.body = new URLSearchParams(postBody).toString();
+        // FUNGSI KOMUNIKASI API (Disempurnakan sesuai Dokumen)
+        async function hitApiOTP(endpoint, isPost = false, postData = null) {
+            const apiKey = localStorage.getItem("otp_key_reseller");
+            if (!apiKey) throw new Error("API Key belum disetting.");
+
+            // Menggunakan header X-Api-Key sesuai rekomendasi dokumentasi
+            let options = {
+                method: isPost ? "POST" : "GET",
+                headers: {
+                    "X-Api-Key": apiKey,
+                    "Accept": "application/json"
+                }
+            };
+
+            // Dokumentasi mensyaratkan Content-Type: application/json untuk POST
+            if (isPost && postData) {
+                options.headers["Content-Type"] = "application/json";
+                options.body = JSON.stringify(postData);
             }
+
+            // Gunakan API asli langsung. Jika kena block CORS browser, proxy akan turun tangan.
+            let targetUrl = `https://otpinstan.com/api/reseller${endpoint}`;
+            
+            // Menggunakan Fallback Proxy (corsproxy.io tidak merusak format JSON)
+            const proxies = ["", "https://corsproxy.io/?"];
+            
             for (let proxy of proxies) {
                 try {
-                    let url = proxy !== "" ? (proxy.includes("corsproxy.io") ? proxy + encodeURIComponent(targetUrl) : proxy + targetUrl) : targetUrl;
+                    let url = proxy !== "" ? proxy + encodeURIComponent(targetUrl) : targetUrl;
                     const res = await fetch(url, options);
-                    if (res.ok) return await res.json();
-                } catch (e) {}
+                    const jsonRes = await res.json();
+                    return jsonRes; // Selalu kembalikan respons mentah agar bisa dianalisis "success" dan "message" nya
+                } catch (e) {
+                    // Lanjut ke proxy berikutnya jika gagal
+                }
             }
-            throw new Error("Koneksi gagal.");
+            throw new Error("Koneksi internet / CORS gagal memproses request.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -142,62 +168,78 @@
                 document.getElementById("otpKeyV5").value = savedKey;
                 document.getElementById("statusKeyV5").innerText = "✅ API Key Aktif.";
                 document.getElementById("statusKeyV5").style.color = "#50fa7b";
-                refreshSemuaDataLive();
+                ambilSaldoLive();
             } else { toggleApiKeyDropdown(); }
 
             const orderanLokal = localStorage.getItem("daftar_orderan_srv1");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
-            // Memuat Riwayat Lengkap
             const riwayatLokal = localStorage.getItem("riwayat_all_srv1");
             if (riwayatLokal) { riwayatLengkap = JSON.parse(riwayatLokal); renderRiwayatLengkap(); }
 
-            setInterval(mesinWaktuTerpusat, 7000);
-            setInterval(mesinCekSmsTerpusat, 7000); 
-            setInterval(ambilLayananLive, 7000); 
+            // Polling waktu lokal berjalan 1 detik
+            setInterval(mesinWaktuTerpusat, 1000);
+            
+            // Polling cek SMS ke server diubah jadi 5 DETIK sesuai anjuran di gambar Rate Limit
+            setInterval(mesinCekSmsTerpusat, 5000); 
         });
 
+        // ================= UI TOGGLES =================
         function toggleApiKeyDropdown() {
             const w = document.getElementById("wadahApiKeyDropdown");
             w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
         }
+
         function toggleMekanismeDropdown() {
             const w = document.getElementById("boxLayananShopee");
-            w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
+            if (w.style.display === "none" || w.style.display === "") {
+                w.style.display = "block";
+                ambilLayananLive(); // Hanya tarik data dari server saat dropdown dibuka (Hemat Request)
+            } else {
+                w.style.display = "none";
+            }
         }
+
         function toggleRiwayatDropdown() {
             const w = document.getElementById("wadahRiwayatDropdown");
             w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
             renderRiwayatLengkap();
         }
 
+        // ================= API CALLS =================
         function simpanKeyV5() {
             const key = document.getElementById("otpKeyV5").value.trim();
             if(!key) { alert("Masukkan API Key!"); return; }
             localStorage.setItem("otp_key_reseller", key);
             document.getElementById("statusKeyV5").innerText = "✅ API Key Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
-            refreshSemuaDataLive(); toggleApiKeyDropdown();
+            ambilSaldoLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); ambilLayananLive(); }
-
         async function ambilSaldoLive() {
-            const key = localStorage.getItem("otp_key_reseller"); if (!key) return;
             try {
-                const d = await fetchSmartProxy(`https://otpinstan.com/api/reseller/balance.php?api_key=${key}&t=${Date.now()}`);
-                saldoSekarangGlobal = parseInt(d.balance || d.saldo || d.balance_reseller || 0);
-                document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
+                // Endpoint shared (balance.php)
+                const data = await hitApiOTP(`/balance.php`);
+                let balance = parseInt(data.balance || data.saldo || 0);
+                document.getElementById("txtSaldoLive").innerText = "Rp " + balance.toLocaleString("id-ID");
             } catch(e) {}
         }
 
         async function ambilLayananLive() {
-            const key = localStorage.getItem("otp_key_reseller"); if (!key) return;
+            const btnRefresh = document.getElementById("btnRefreshLayanan");
+            if(btnRefresh) btnRefresh.style.opacity = "0.5";
+
             try {
-                const data = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/services.php?country_id=7&api_key=${key}&t=${Date.now()}`);
-                let listArray = Array.isArray(data) ? data : (data.services || data.data || data.result || []);
-                globalListLayanan = listArray; renderDaftarLayanan();
-            } catch (e) { printLog("Koneksi gagal/timeout."); }
+                // GET Endpoint: Layanan + harga + stok Server 1
+                const data = await hitApiOTP(`/s1/services.php?country_id=7`);
+                let listArray = Array.isArray(data) ? data : (data.services || data.data || []);
+                globalListLayanan = listArray; 
+                renderDaftarLayanan();
+            } catch (e) { 
+                printLog("Gagal mengambil daftar layanan."); 
+            } finally {
+                if(btnRefresh) btnRefresh.style.opacity = "1";
+            }
         }
 
         function renderDaftarLayanan() {
@@ -208,15 +250,21 @@
             if (filtered.length > 0) {
                 let html = "";
                 filtered.forEach((item, index) => {
-                    let id = String(item.product_id || item.id || item.service_id);
+                    let id = String(item.product_id || item.id);
                     let name = item.name || item.service_name;
                     let price = parseInt(item.price || item.cost || item.harga || 0);
                     let stock = parseInt(item.stock ?? item.stok ?? item.available ?? 0);
 
                     let isSelected = (idLayananTerpilih === id);
-                    if (!idLayananTerpilih && index === 0) { idLayananTerpilih = id; namaLayananTerpilih = name; hargaLayananTerpilih = price; isSelected = true; }
-                    if (isSelected) { hargaLayananTerpilih = price; updateTeksHeaderTerpilih(name, stock, price); }
-                    html += `<div class="opsi-shopee ${isSelected ? "terpilih" : ""}" onclick="pilihOpsiShopee(this, '${id}', '${name}', ${price}, ${stock})"><div style="font-size: 12px; font-weight: 600; color: #fff;">${name} <span style="color: #8b8da9; font-size: 10px;">(${stock.toLocaleString('id-ID')} stok)</span></div><div style="color: #b4b7ff; font-weight: bold; font-size: 12px;">Rp ${price.toLocaleString('id-ID')}</div></div>`;
+                    if (!idLayananTerpilih && index === 0) { 
+                        idLayananTerpilih = id; namaLayananTerpilih = name; hargaLayananTerpilih = price; isSelected = true; 
+                    }
+                    if (isSelected) { updateTeksHeaderTerpilih(name, stock, price); }
+                    
+                    html += `<div class="opsi-shopee ${isSelected ? "terpilih" : ""}" onclick="pilihOpsiShopee('${id}', '${name}', ${price}, ${stock})">
+                        <div style="font-size: 12px; font-weight: 600; color: #fff;">${name} <span style="color: #8b8da9; font-size: 10px;">(${stock.toLocaleString('id-ID')} stok)</span></div>
+                        <div style="color: #b4b7ff; font-weight: bold; font-size: 12px;">Rp ${price.toLocaleString('id-ID')}</div>
+                    </div>`;
                 });
                 container.innerHTML = html;
             } else { container.innerHTML = `<div style="padding: 15px; text-align: center; color: #8b8da9; font-size: 11px; font-style: italic;">Layanan tidak ditemukan...</div>`; }
@@ -226,158 +274,152 @@
             document.getElementById("txtLayananTerpilihHeader").innerHTML = `${nama} <span style="color: #8b8da9; font-size: 10px;">(${stok.toLocaleString('id-ID')} stok)</span> — <span style="color:#00ffcc;">Rp ${harga.toLocaleString('id-ID')}</span>`;
         }
 
-        function pilihOpsiShopee(elemen, id, nama, harga, stok) {
+        function pilihOpsiShopee(id, nama, harga, stok) {
             idLayananTerpilih = id; namaLayananTerpilih = nama; hargaLayananTerpilih = harga;
             updateTeksHeaderTerpilih(nama, stok, harga); renderDaftarLayanan(); toggleMekanismeDropdown();
         }
 
         async function prosesPesanSekarang() {
-            const apiKey = localStorage.getItem("otp_key_reseller");
-            if(!idLayananTerpilih || !apiKey) { alert("Periksa API Key dan Layanan!"); return; }
+            if(!idLayananTerpilih) { alert("Pilih Layanan terlebih dahulu!"); return; }
             const btn = document.getElementById("btnPesanUtama");
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                const data = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/order.php?api_key=${apiKey}`, true, { api_key: apiKey, product_id: idLayananTerpilih, country_id: 7 });
-                if (data.order_id || data.phone || data.status === true) {
-                    let orderBaru = { order_id: data.order_id || data.id, phone: data.phone || data.number, layanan: namaLayananTerpilih, harga: hargaLayananTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" };
+                // Sesuai dokumen: POST /s1/order.php dengan payload JSON
+                const payload = { product_id: parseInt(idLayananTerpilih), country_id: 7 };
+                const data = await hitApiOTP(`/s1/order.php`, true, payload);
+                
+                // Pengecekan response dari API
+                if (data.success === true || data.order_id) {
+                    let orderBaru = { 
+                        order_id: data.order_id, 
+                        phone: data.phone || data.number, 
+                        layanan: namaLayananTerpilih, 
+                        harga: hargaLayananTerpilih, 
+                        waktu_dibuat: Date.now(), 
+                        status: "pending", 
+                        otp: "" 
+                    };
                     
-                    // Simpan ke pesanan aktif
                     daftarOrderan.unshift(orderBaru); 
-                    renderUILayout(); 
-                    simpanDaftarOrderanKeLokal();
-
-                    // Simpan ke riwayat lengkap
                     riwayatLengkap.unshift(JSON.parse(JSON.stringify(orderBaru)));
-                    simpanRiwayatLokal();
+                    
+                    renderUILayout(); simpanDaftarOrderanKeLokal(); simpanRiwayatLokal();
                     if(document.getElementById("wadahRiwayatDropdown").style.display === "block") renderRiwayatLengkap();
 
-                    printLog(`Nomor didapatkan!`); ambilSaldoLive();
-                } else { alert(`Gagal: ${data.message}`); }
-            } catch (e) { alert("Gagal memproses: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
+                    printLog(`Nomor ${orderBaru.phone} didapatkan!`); 
+                    ambilSaldoLive();
+                } else { 
+                    alert(`Pesanan Gagal:\n${data.message || 'Error tidak diketahui dari server'}`); 
+                }
+            } catch (e) { 
+                alert("Sistem Error: " + e.message); 
+            } finally { 
+                btn.disabled = false; btn.innerHTML = teksAsli; 
+            }
         }
 
         async function eksekusiBatalkanServer(index) {
-            const apiKey = localStorage.getItem("otp_key_reseller"); if (!apiKey) return;
             const item = daftarOrderan[index];
             try {
-                const res = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&api_key=${apiKey}&t=${Date.now()}`, true, { api_key: apiKey, order_id: item.order_id });
-                if (res.status === true || res.status === "success" || res.msg?.toLowerCase().includes("berhasil")) {
+                // Sesuai dokumen: POST /s1/cancel.php dengan payload JSON
+                const data = await hitApiOTP(`/s1/cancel.php`, true, { order_id: item.order_id });
+                
+                // Menghindari pesan "undefined" - mengambil properti message/msg dengan aman
+                if (data.success === true) {
                     item.status = "cancelled"; 
                     showToast("Dibatalkan!"); 
-                    renderUILayout(); 
-                    simpanDaftarOrderanKeLokal(); 
-                    syncKeRiwayat(item.order_id, "cancelled", "");
+                    renderUILayout(); simpanDaftarOrderanKeLokal(); syncKeRiwayat(item.order_id, "cancelled", "");
                     await ambilSaldoLive();
-                } else { alert(`Server menolak pembatalan:\n${res.msg}`); }
-            } catch (e) { alert("Error koneksi pembatalan."); }
+                } else { 
+                    alert(`Gagal Dibatalkan:\n${data.message || data.error || 'Server menolak (mungkin kurang dari 2 menit)'}`); 
+                }
+            } catch (e) { alert("Sistem Error saat membatalkan."); }
         }
 
         async function mesinCekSmsTerpusat() {
-            const k = localStorage.getItem("otp_key_reseller"); if (!k) return;
-            daftarOrderan.forEach(async (i) => {
-                if (i.status !== "pending") return; 
+            // Berjalan tiap 5 detik (12 request/menit) = Sangat Aman dari limit
+            for (let i of daftarOrderan) {
+                if (i.status !== "pending") continue; 
                 try {
-                    const d = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/check.php?order_id=${i.order_id}&api_key=${k}&t=${Date.now()}`);
-                    if (d.status === "received" || d.otp || d.sms) {
-                        i.status = "received"; i.otp = d.otp || d.sms; 
-                        putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
-                        renderUILayout(); 
-                        simpanDaftarOrderanKeLokal(); 
-                        syncKeRiwayat(i.order_id, "received", i.otp);
+                    // Sesuai Dokumen: GET /s1/check.php
+                    const data = await hitApiOTP(`/s1/check.php?order_id=${i.order_id}`);
+                    
+                    if (data.otp) { // Dokumentasi contoh response cek OTP punya field 'otp'
+                        i.status = "received"; i.otp = data.otp; 
+                        putarSuaraNotif(); 
+                        renderUILayout(); simpanDaftarOrderanKeLokal(); syncKeRiwayat(i.order_id, "received", i.otp);
                         printLog(`🎉 OTP MASUK (${i.otp})!`);
-                    } else if (d.status === "cancelled" || d.status === "expired") {
+                    } else if (data.status === "cancelled" || data.status === "expired") {
                         i.status = "cancelled"; 
-                        renderUILayout(); 
-                        simpanDaftarOrderanKeLokal(); 
-                        syncKeRiwayat(i.order_id, "cancelled", "");
+                        renderUILayout(); simpanDaftarOrderanKeLokal(); syncKeRiwayat(i.order_id, "cancelled", "");
                         ambilSaldoLive();
                     }
                 } catch (e) {}
-            });
+            }
         }
 
+        // ================= RENDERING & LOGIC =================
         function renderUILayout() {
             const container = document.getElementById("containerListOrder");
             if (daftarOrderan.length === 0) { container.innerHTML = `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`; return; }
             let html = ""; let flagSimpan = false;
+            
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                
+                // Berdasarkan dokumen: order hangus setelah 20 menit (1200 detik)
                 if (item.status === "pending" && sec >= 1200) { 
-                    item.status = "cancelled"; 
-                    flagSimpan = true; 
-                    syncKeRiwayat(item.order_id, "cancelled", ""); 
+                    item.status = "cancelled"; flagSimpan = true; syncKeRiwayat(item.order_id, "cancelled", ""); 
                 }
-                let sisa = Math.max(0, 1200 - sec); let cool = Math.max(0, 120 - sec);
-                let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = "";
+                
+                let sisa = Math.max(0, 1200 - sec); 
+                // Berdasarkan dokumen: tombol batal aktif setelah 2 menit (120 detik)
+                let cool = Math.max(0, 120 - sec);
+                
+                let textStat = `⚡ Menunggu OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = "";
 
                 if (item.status === "received") { 
                     textStat = `🎉 SMS/OTP Diterima!`; colStat = "#50fa7b"; 
                     kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
                 } else if (item.status === "cancelled") { textStat = "❌ Dibatalkan"; colStat = "#ff5555"; }
                 
-                html += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${item.status === "pending" ? `<button class="btn-batal" ${cool>0?'disabled':''} onclick="eksekusiBatalkanServer(${index})">${cool>0?`Batalkan (${cool}s)`:'❌ Batalkan Pesanan'}</button>` : ''}</div>`;
+                html += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${item.status === "pending" ? `<button class="btn-batal" ${cool>0?'disabled':''} onclick="eksekusiBatalkanServer(${index})">${cool>0?`Tunggu (${cool}s)`:'❌ Batalkan Pesanan'}</button>` : ''}</div>`;
             });
             container.innerHTML = html; if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
 
-        // FUNGSI RIWAYAT LENGKAP
         function renderRiwayatLengkap() {
             const container = document.getElementById("containerRiwayatLengkap");
             if (riwayatLengkap.length === 0) { 
-                container.innerHTML = `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat orderan.</div>`; 
-                return; 
+                container.innerHTML = `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat.</div>`; return; 
             }
             let html = "";
             riwayatLengkap.forEach((item) => {
                 let statusColor = item.status === "received" ? "#50fa7b" : (item.status === "cancelled" ? "#ff5555" : "#ffb86c");
                 let statusText = item.status === "received" ? `SUKSES (OTP: ${item.otp})` : (item.status === "cancelled" ? "DIBATALKAN" : "PENDING");
-                let tgl = new Date(item.waktu_dibuat);
-                let tglFormat = `${tgl.toLocaleDateString('id-ID')} - ${tgl.toLocaleTimeString('id-ID')}`;
-                
+                let tgl = new Date(item.waktu_dibuat); let tglFormat = `${tgl.toLocaleDateString('id-ID')} - ${tgl.toLocaleTimeString('id-ID')}`;
                 html += `<div style="background: #1a1b35; border: 1px solid #2c2e5c; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 11px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <strong style="color: #fff; font-size: 12px;">${item.layanan}</strong>
-                        <span style="color: #b4b7ff; font-weight: bold;">Rp ${(item.harga || 0).toLocaleString('id-ID')}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; color: #8b8da9; margin-bottom: 6px;">
-                        <span>📱 ${item.phone}</span>
-                        <span>🕒 ${tglFormat}</span>
-                    </div>
-                    <div style="color: ${statusColor}; font-weight: bold; font-size: 11px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed #2c2e5c;">
-                        STATUS: ${statusText}
-                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;"><strong style="color: #fff; font-size: 12px;">${item.layanan}</strong><span style="color: #b4b7ff; font-weight: bold;">Rp ${(item.harga || 0).toLocaleString('id-ID')}</span></div>
+                    <div style="display: flex; justify-content: space-between; color: #8b8da9; margin-bottom: 6px;"><span>📱 ${item.phone}</span><span>🕒 ${tglFormat}</span></div>
+                    <div style="color: ${statusColor}; font-weight: bold; font-size: 11px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed #2c2e5c;">STATUS: ${statusText}</div>
                 </div>`;
             });
             container.innerHTML = html;
         }
 
-        function simpanRiwayatLokal() {
-            localStorage.setItem("riwayat_all_srv1", JSON.stringify(riwayatLengkap));
-        }
-
         function syncKeRiwayat(orderId, status, otp) {
             let item = riwayatLengkap.find(x => x.order_id === orderId);
             if (item) {
-                item.status = status;
-                if (otp !== "") item.otp = otp;
+                item.status = status; if (otp !== "") item.otp = otp;
                 simpanRiwayatLokal();
-                if (document.getElementById("wadahRiwayatDropdown").style.display === "block") {
-                    renderRiwayatLengkap();
-                }
+                if (document.getElementById("wadahRiwayatDropdown").style.display === "block") renderRiwayatLengkap();
             }
         }
 
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv1", JSON.stringify(daftarOrderan)); }
-        
-        function hapusRiwayatSelesai() { 
-            // Hanya membersihkan dari panel aktif, data utuh tetap di riwayatLengkap
-            daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); 
-            renderUILayout(); 
-            simpanDaftarOrderanKeLokal(); 
-            showToast("Dibersihkan dari panel aktif!"); 
-        }
-
+        function simpanRiwayatLokal() { localStorage.setItem("riwayat_all_srv1", JSON.stringify(riwayatLengkap)); }
+        function hapusRiwayatSelesai() { daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function printLog(t) { document.getElementById("miniConsoleLog").innerHTML += `<br>└> ${t}`; document.getElementById("miniConsoleLog").scrollTop = 9999; }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
@@ -385,11 +427,6 @@
 
         function putarSuaraNotif() {
             try { const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const notes = [523.25, 659.25, 783.99, 1046.50]; let time = audioCtx.currentTime; for (let r = 0; r < 2; r++) { notes.forEach((freq) => { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = "sawtooth"; osc.frequency.setValueAtTime(freq, time); gain.gain.setValueAtTime(0.2, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(time); osc.stop(time + 0.2); time += 0.08; }); time += 0.15; } } catch (e) {}
-        }
-        function munculkanPopupNative(nomor, otp, layanan) {
-            if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
-            } 
         }
     </script>
 </body>
