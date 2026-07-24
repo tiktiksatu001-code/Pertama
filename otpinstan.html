@@ -89,6 +89,19 @@
             </div>
         </div>
 
+        <!-- Fitur Riwayat Lengkap -->
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div class="pemicu-dropdown" onclick="toggleRiwayatDropdown()">
+                <span>📜 Riwayat Orderan Lengkap</span>
+                <span id="panahRiwayat" style="font-size: 10px;">▼</span>
+            </div>
+            <div id="wadahRiwayatDropdown" class="wrapper-layanan" style="display: none; padding: 10px; max-height: 250px; overflow-y: auto; background: var(--bg-card);">
+                <div id="containerRiwayatLengkap">
+                    <div style="text-align: center; color: #6272a4; font-size: 11px; font-style: italic;">Memuat riwayat...</div>
+                </div>
+            </div>
+        </div>
+
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
             └> Server 1 Ready.
         </div>
@@ -98,6 +111,7 @@
 
     <script>
         let daftarOrderan = []; 
+        let riwayatLengkap = []; // Array terpisah untuk riwayat utuh
         let saldoSekarangGlobal = 0;
         let globalListLayanan = []; 
         let idLayananTerpilih = null;
@@ -134,6 +148,10 @@
             const orderanLokal = localStorage.getItem("daftar_orderan_srv1");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
+            // Memuat Riwayat Lengkap
+            const riwayatLokal = localStorage.getItem("riwayat_all_srv1");
+            if (riwayatLokal) { riwayatLengkap = JSON.parse(riwayatLokal); renderRiwayatLengkap(); }
+
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 2000); 
             setInterval(ambilLayananLive, 8000); 
@@ -146,6 +164,11 @@
         function toggleMekanismeDropdown() {
             const w = document.getElementById("boxLayananShopee");
             w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
+        }
+        function toggleRiwayatDropdown() {
+            const w = document.getElementById("wadahRiwayatDropdown");
+            w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
+            renderRiwayatLengkap();
         }
 
         function simpanKeyV5() {
@@ -218,7 +241,17 @@
                 const data = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/order.php?api_key=${apiKey}`, true, { api_key: apiKey, product_id: idLayananTerpilih, country_id: 7 });
                 if (data.order_id || data.phone || data.status === true) {
                     let orderBaru = { order_id: data.order_id || data.id, phone: data.phone || data.number, layanan: namaLayananTerpilih, harga: hargaLayananTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" };
-                    daftarOrderan.unshift(orderBaru); renderUILayout(); simpanDaftarOrderanKeLokal();
+                    
+                    // Simpan ke pesanan aktif
+                    daftarOrderan.unshift(orderBaru); 
+                    renderUILayout(); 
+                    simpanDaftarOrderanKeLokal();
+
+                    // Simpan ke riwayat lengkap
+                    riwayatLengkap.unshift(JSON.parse(JSON.stringify(orderBaru)));
+                    simpanRiwayatLokal();
+                    if(document.getElementById("wadahRiwayatDropdown").style.display === "block") renderRiwayatLengkap();
+
                     printLog(`Nomor didapatkan!`); ambilSaldoLive();
                 } else { alert(`Gagal: ${data.message}`); }
             } catch (e) { alert("Gagal memproses: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
@@ -230,7 +263,12 @@
             try {
                 const res = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&api_key=${apiKey}&t=${Date.now()}`, true, { api_key: apiKey, order_id: item.order_id });
                 if (res.status === true || res.status === "success" || res.msg?.toLowerCase().includes("berhasil")) {
-                    item.status = "cancelled"; showToast("Dibatalkan!"); renderUILayout(); simpanDaftarOrderanKeLokal(); await ambilSaldoLive();
+                    item.status = "cancelled"; 
+                    showToast("Dibatalkan!"); 
+                    renderUILayout(); 
+                    simpanDaftarOrderanKeLokal(); 
+                    syncKeRiwayat(item.order_id, "cancelled", "");
+                    await ambilSaldoLive();
                 } else { alert(`Server menolak pembatalan:\n${res.msg}`); }
             } catch (e) { alert("Error koneksi pembatalan."); }
         }
@@ -244,9 +282,16 @@
                     if (d.status === "received" || d.otp || d.sms) {
                         i.status = "received"; i.otp = d.otp || d.sms; 
                         putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
-                        renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
+                        renderUILayout(); 
+                        simpanDaftarOrderanKeLokal(); 
+                        syncKeRiwayat(i.order_id, "received", i.otp);
+                        printLog(`🎉 OTP MASUK (${i.otp})!`);
                     } else if (d.status === "cancelled" || d.status === "expired") {
-                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
+                        i.status = "cancelled"; 
+                        renderUILayout(); 
+                        simpanDaftarOrderanKeLokal(); 
+                        syncKeRiwayat(i.order_id, "cancelled", "");
+                        ambilSaldoLive();
                     }
                 } catch (e) {}
             });
@@ -258,7 +303,11 @@
             let html = ""; let flagSimpan = false;
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 1200) { item.status = "cancelled"; flagSimpan = true; }
+                if (item.status === "pending" && sec >= 1200) { 
+                    item.status = "cancelled"; 
+                    flagSimpan = true; 
+                    syncKeRiwayat(item.order_id, "cancelled", ""); 
+                }
                 let sisa = Math.max(0, 1200 - sec); let cool = Math.max(0, 120 - sec);
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = "";
 
@@ -272,8 +321,63 @@
             container.innerHTML = html; if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
 
+        // FUNGSI RIWAYAT LENGKAP
+        function renderRiwayatLengkap() {
+            const container = document.getElementById("containerRiwayatLengkap");
+            if (riwayatLengkap.length === 0) { 
+                container.innerHTML = `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat orderan.</div>`; 
+                return; 
+            }
+            let html = "";
+            riwayatLengkap.forEach((item) => {
+                let statusColor = item.status === "received" ? "#50fa7b" : (item.status === "cancelled" ? "#ff5555" : "#ffb86c");
+                let statusText = item.status === "received" ? `SUKSES (OTP: ${item.otp})` : (item.status === "cancelled" ? "DIBATALKAN" : "PENDING");
+                let tgl = new Date(item.waktu_dibuat);
+                let tglFormat = `${tgl.toLocaleDateString('id-ID')} - ${tgl.toLocaleTimeString('id-ID')}`;
+                
+                html += `<div style="background: #1a1b35; border: 1px solid #2c2e5c; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 11px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <strong style="color: #fff; font-size: 12px;">${item.layanan}</strong>
+                        <span style="color: #b4b7ff; font-weight: bold;">Rp ${(item.harga || 0).toLocaleString('id-ID')}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: #8b8da9; margin-bottom: 6px;">
+                        <span>📱 ${item.phone}</span>
+                        <span>🕒 ${tglFormat}</span>
+                    </div>
+                    <div style="color: ${statusColor}; font-weight: bold; font-size: 11px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed #2c2e5c;">
+                        STATUS: ${statusText}
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function simpanRiwayatLokal() {
+            localStorage.setItem("riwayat_all_srv1", JSON.stringify(riwayatLengkap));
+        }
+
+        function syncKeRiwayat(orderId, status, otp) {
+            let item = riwayatLengkap.find(x => x.order_id === orderId);
+            if (item) {
+                item.status = status;
+                if (otp !== "") item.otp = otp;
+                simpanRiwayatLokal();
+                if (document.getElementById("wadahRiwayatDropdown").style.display === "block") {
+                    renderRiwayatLengkap();
+                }
+            }
+        }
+
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv1", JSON.stringify(daftarOrderan)); }
-        function hapusRiwayatSelesai() { daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Dibersihkan!"); }
+        
+        function hapusRiwayatSelesai() { 
+            // Hanya membersihkan dari panel aktif, data utuh tetap di riwayatLengkap
+            daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); 
+            renderUILayout(); 
+            simpanDaftarOrderanKeLokal(); 
+            showToast("Dibersihkan dari panel aktif!"); 
+        }
+
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function printLog(t) { document.getElementById("miniConsoleLog").innerHTML += `<br>└> ${t}`; document.getElementById("miniConsoleLog").scrollTop = 9999; }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
