@@ -109,7 +109,7 @@
 
         <!-- Console Log -->
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
-            └> Server 1 Ready. (Docs V2 + Anti Cache Applied)
+            └> Server 1 Ready. (Harga Sinkron & Strict Mode)
         </div>
     </div>
     
@@ -123,18 +123,17 @@
         let namaLayananTerpilih = "";
         let hargaLayananTerpilih = 0;
 
-        // FUNGSI KOMUNIKASI API (Disempurnakan & Anti-Cache)
+        // FUNGSI KOMUNIKASI API 
         async function hitApiOTP(endpoint, isPost = false, postData = null) {
             const apiKey = localStorage.getItem("otp_key_reseller");
             if (!apiKey) throw new Error("API Key belum disetting.");
 
-            // 1. Tambahkan waktu acak (timestamp) agar proxy/browser selalu menganggap ini request baru
             const separator = endpoint.includes("?") ? "&" : "?";
             const endpointAntiCache = `${endpoint}${separator}_t=${Date.now()}`;
 
             let options = {
                 method: isPost ? "POST" : "GET",
-                cache: "no-store", // 2. Perintah paksa agar browser tidak menggunakan cache lama
+                cache: "no-store", 
                 headers: {
                     "X-Api-Key": apiKey,
                     "Accept": "application/json"
@@ -146,9 +145,7 @@
                 options.body = JSON.stringify(postData);
             }
 
-            // Gunakan endpoint yang sudah disisipi waktu acak
             let targetUrl = `https://otpinstan.com/api/reseller${endpointAntiCache}`;
-            
             const proxies = ["", "https://corsproxy.io/?"];
             
             for (let proxy of proxies) {
@@ -157,9 +154,7 @@
                     const res = await fetch(url, options);
                     const jsonRes = await res.json();
                     return jsonRes; 
-                } catch (e) {
-                    // Lanjut ke proxy berikutnya jika gagal
-                }
+                } catch (e) { }
             }
             throw new Error("Koneksi internet / CORS gagal memproses request.");
         }
@@ -179,10 +174,7 @@
             const riwayatLokal = localStorage.getItem("riwayat_all_srv1");
             if (riwayatLokal) { riwayatLengkap = JSON.parse(riwayatLokal); renderRiwayatLengkap(); }
 
-            // Polling waktu lokal berjalan 1 detik
             setInterval(mesinWaktuTerpusat, 1000);
-            
-            // Polling cek SMS ke server diubah jadi 5 DETIK sesuai anjuran
             setInterval(mesinCekSmsTerpusat, 5000); 
         });
 
@@ -196,7 +188,7 @@
             const w = document.getElementById("boxLayananShopee");
             if (w.style.display === "none" || w.style.display === "") {
                 w.style.display = "block";
-                ambilLayananLive(); // Hanya tarik data dari server saat dropdown dibuka (Hemat Request)
+                ambilLayananLive(); 
             } else {
                 w.style.display = "none";
             }
@@ -245,19 +237,30 @@
         function renderDaftarLayanan() {
             const container = document.getElementById("listLayananRender");
             const keyword = document.getElementById("cariLayanan").value.toLowerCase();
-            let filtered = globalListLayanan.filter(item => { return String(item.name || item.service_name).toLowerCase().includes(keyword); });
+            
+            // Filter pencarian
+            let filtered = globalListLayanan.filter(item => { 
+                return String(item.name || item.service_name).toLowerCase().includes(keyword); 
+            });
+
+            // 🔥 PERBAIKAN 1: Mengurutkan list dari harga termurah seperti tampilan web asli
+            filtered.sort((a, b) => {
+                let priceA = parseInt(a.price || a.cost || a.harga || 0);
+                let priceB = parseInt(b.price || b.cost || b.harga || 0);
+                return priceA - priceB;
+            });
 
             if (filtered.length > 0) {
                 let html = "";
                 filtered.forEach((item, index) => {
-                    let id = String(item.product_id || item.id);
+                    let id = item.product_id || item.id;
                     let name = item.name || item.service_name;
                     let price = parseInt(item.price || item.cost || item.harga || 0);
                     let stock = parseInt(item.stock ?? item.stok ?? item.available ?? 0);
 
-                    let isSelected = (idLayananTerpilih === id);
+                    let isSelected = (idLayananTerpilih === String(id));
                     if (!idLayananTerpilih && index === 0) { 
-                        idLayananTerpilih = id; namaLayananTerpilih = name; hargaLayananTerpilih = price; isSelected = true; 
+                        idLayananTerpilih = String(id); namaLayananTerpilih = name; hargaLayananTerpilih = price; isSelected = true; 
                     }
                     if (isSelected) { updateTeksHeaderTerpilih(name, stock, price); }
                     
@@ -275,7 +278,7 @@
         }
 
         function pilihOpsiShopee(id, nama, harga, stok) {
-            idLayananTerpilih = id; namaLayananTerpilih = nama; hargaLayananTerpilih = harga;
+            idLayananTerpilih = String(id); namaLayananTerpilih = nama; hargaLayananTerpilih = harga;
             updateTeksHeaderTerpilih(nama, stok, harga); renderDaftarLayanan(); toggleMekanismeDropdown();
         }
 
@@ -285,28 +288,24 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                // Menggunakan kombinasi payload agar support sistem rekomendasi (platform_id) 
-                // maupun sistem spesifik (product_id) sesuai aturan Server 1
+                // 🔥 PERBAIKAN 2: Mode STRICT (Hanya product_id).
+                // Menghapus platform_id agar server TIDAK auto-pick harga mahal saat stok kosong.
                 const payload = { 
-                   // platform_id: parseInt(idLayananTerpilih), 
-                    product_id: parseInt(idLayananTerpilih), 
+                    product_id: idLayananTerpilih, 
                     country_id: 7 
                 };
-                
+
                 const data = await hitApiOTP(`/s1/order.php`, true, payload);
                 
                 if (data.success === true || data.order_id) {
-                    
-                    // 🔥 KUNCI SINKRONISASI: 
-                    // Ambil harga asli dari respons server (struk), BUKAN dari tampilan awal.
-                    // Jika server tidak mengirim detail harga di struk, baru pakai harga tampilan sebagai cadangan.
-                    let hargaAsliServer = parseInt(data.price || data.harga || data.cost || hargaLayananTerpilih);
+                    // Cek harga dari tagihan asli server (jika ada) untuk keamanan ganda
+                    let hargaTagihanServer = parseInt(data.price || data.cost || data.harga || hargaLayananTerpilih);
 
                     let orderBaru = { 
                         order_id: data.order_id, 
                         phone: data.phone || data.number, 
                         layanan: namaLayananTerpilih, 
-                        harga: hargaAsliServer, // <-- Sekarang riwayat akan mencatat harga yang benar-benar dipotong
+                        harga: hargaTagihanServer, 
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
                         otp: "" 
@@ -315,24 +314,20 @@
                     daftarOrderan.unshift(orderBaru); 
                     riwayatLengkap.unshift(JSON.parse(JSON.stringify(orderBaru)));
                     
-                    renderUILayout(); 
-                    simpanDaftarOrderanKeLokal(); 
-                    simpanRiwayatLokal();
+                    renderUILayout(); simpanDaftarOrderanKeLokal(); simpanRiwayatLokal();
                     if(document.getElementById("wadahRiwayatDropdown").style.display === "block") renderRiwayatLengkap();
 
-                    printLog(`Nomor ${orderBaru.phone} didapatkan! (Biaya: Rp ${hargaAsliServer})`); 
-                    
-                    // Otomatis merefresh sisa saldo agar langsung sinkron di pojok kanan atas
+                    printLog(`Nomor ${orderBaru.phone} didapatkan! (Biaya: Rp ${hargaTagihanServer})`); 
                     ambilSaldoLive();
                 } else { 
-                    alert(`Pesanan Gagal:\n${data.message || 'Error tidak diketahui dari server'}`); 
+                    alert(`Pesanan Gagal:\n${data.message || 'Stok habis / Error Server'}`); 
                 }
             } catch (e) { 
                 alert("Sistem Error: " + e.message); 
             } finally { 
                 btn.disabled = false; btn.innerHTML = teksAsli; 
             }
-                }
+        }
 
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
