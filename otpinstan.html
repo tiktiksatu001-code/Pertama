@@ -109,7 +109,7 @@
 
         <!-- Console Log -->
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
-            └> Server 1 Ready. (Docs V2 Applied)
+            └> Server 1 Ready. (Docs V2 + Anti Cache Applied)
         </div>
     </div>
     
@@ -123,30 +123,32 @@
         let namaLayananTerpilih = "";
         let hargaLayananTerpilih = 0;
 
-        // FUNGSI KOMUNIKASI API (Disempurnakan sesuai Dokumen)
+        // FUNGSI KOMUNIKASI API (Disempurnakan & Anti-Cache)
         async function hitApiOTP(endpoint, isPost = false, postData = null) {
             const apiKey = localStorage.getItem("otp_key_reseller");
             if (!apiKey) throw new Error("API Key belum disetting.");
 
-            // Menggunakan header X-Api-Key sesuai rekomendasi dokumentasi
+            // 1. Tambahkan waktu acak (timestamp) agar proxy/browser selalu menganggap ini request baru
+            const separator = endpoint.includes("?") ? "&" : "?";
+            const endpointAntiCache = `${endpoint}${separator}_t=${Date.now()}`;
+
             let options = {
                 method: isPost ? "POST" : "GET",
+                cache: "no-store", // 2. Perintah paksa agar browser tidak menggunakan cache lama
                 headers: {
                     "X-Api-Key": apiKey,
                     "Accept": "application/json"
                 }
             };
 
-            // Dokumentasi mensyaratkan Content-Type: application/json untuk POST
             if (isPost && postData) {
                 options.headers["Content-Type"] = "application/json";
                 options.body = JSON.stringify(postData);
             }
 
-            // Gunakan API asli langsung. Jika kena block CORS browser, proxy akan turun tangan.
-            let targetUrl = `https://otpinstan.com/api/reseller${endpoint}`;
+            // Gunakan endpoint yang sudah disisipi waktu acak
+            let targetUrl = `https://otpinstan.com/api/reseller${endpointAntiCache}`;
             
-            // Menggunakan Fallback Proxy (corsproxy.io tidak merusak format JSON)
             const proxies = ["", "https://corsproxy.io/?"];
             
             for (let proxy of proxies) {
@@ -154,7 +156,7 @@
                     let url = proxy !== "" ? proxy + encodeURIComponent(targetUrl) : targetUrl;
                     const res = await fetch(url, options);
                     const jsonRes = await res.json();
-                    return jsonRes; // Selalu kembalikan respons mentah agar bisa dianalisis "success" dan "message" nya
+                    return jsonRes; 
                 } catch (e) {
                     // Lanjut ke proxy berikutnya jika gagal
                 }
@@ -180,7 +182,7 @@
             // Polling waktu lokal berjalan 1 detik
             setInterval(mesinWaktuTerpusat, 1000);
             
-            // Polling cek SMS ke server diubah jadi 5 DETIK sesuai anjuran di gambar Rate Limit
+            // Polling cek SMS ke server diubah jadi 5 DETIK sesuai anjuran
             setInterval(mesinCekSmsTerpusat, 5000); 
         });
 
@@ -218,7 +220,6 @@
 
         async function ambilSaldoLive() {
             try {
-                // Endpoint shared (balance.php)
                 const data = await hitApiOTP(`/balance.php`);
                 let balance = parseInt(data.balance || data.saldo || 0);
                 document.getElementById("txtSaldoLive").innerText = "Rp " + balance.toLocaleString("id-ID");
@@ -230,7 +231,6 @@
             if(btnRefresh) btnRefresh.style.opacity = "0.5";
 
             try {
-                // GET Endpoint: Layanan + harga + stok Server 1
                 const data = await hitApiOTP(`/s1/services.php?country_id=7`);
                 let listArray = Array.isArray(data) ? data : (data.services || data.data || []);
                 globalListLayanan = listArray; 
@@ -285,11 +285,9 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                // Sesuai dokumen: POST /s1/order.php dengan payload JSON
                 const payload = { product_id: parseInt(idLayananTerpilih), country_id: 7 };
                 const data = await hitApiOTP(`/s1/order.php`, true, payload);
                 
-                // Pengecekan response dari API
                 if (data.success === true || data.order_id) {
                     let orderBaru = { 
                         order_id: data.order_id, 
@@ -322,10 +320,8 @@
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             try {
-                // Sesuai dokumen: POST /s1/cancel.php dengan payload JSON
                 const data = await hitApiOTP(`/s1/cancel.php`, true, { order_id: item.order_id });
                 
-                // Menghindari pesan "undefined" - mengambil properti message/msg dengan aman
                 if (data.success === true) {
                     item.status = "cancelled"; 
                     showToast("Dibatalkan!"); 
@@ -338,14 +334,12 @@
         }
 
         async function mesinCekSmsTerpusat() {
-            // Berjalan tiap 5 detik (12 request/menit) = Sangat Aman dari limit
             for (let i of daftarOrderan) {
                 if (i.status !== "pending") continue; 
                 try {
-                    // Sesuai Dokumen: GET /s1/check.php
                     const data = await hitApiOTP(`/s1/check.php?order_id=${i.order_id}`);
                     
-                    if (data.otp) { // Dokumentasi contoh response cek OTP punya field 'otp'
+                    if (data.otp) { 
                         i.status = "received"; i.otp = data.otp; 
                         putarSuaraNotif(); 
                         renderUILayout(); simpanDaftarOrderanKeLokal(); syncKeRiwayat(i.order_id, "received", i.otp);
@@ -368,13 +362,11 @@
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                // Berdasarkan dokumen: order hangus setelah 20 menit (1200 detik)
                 if (item.status === "pending" && sec >= 1200) { 
                     item.status = "cancelled"; flagSimpan = true; syncKeRiwayat(item.order_id, "cancelled", ""); 
                 }
                 
                 let sisa = Math.max(0, 1200 - sec); 
-                // Berdasarkan dokumen: tombol batal aktif setelah 2 menit (120 detik)
                 let cool = Math.max(0, 120 - sec);
                 
                 let textStat = `⚡ Menunggu OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = "";
